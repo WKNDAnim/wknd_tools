@@ -142,7 +142,7 @@ class Publisher:
             if self.asset_type == 'ELEM':
                 self._publish_Ass()
 
-        # Export for Grooming Task
+        # Export for Grooming Task cacacaca
         elif self.context.task['name'] == 'Grooming':
             # Export geo grp as alembic cache
             self._publish_alembic(1001, 1001)
