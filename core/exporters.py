@@ -224,10 +224,20 @@ def _export_textures(mesh_shader, textures_export_folder):
             texture_export_path = os.path.join(textures_export_folder, texture_file_name)
             texture_export_folder = os.path.dirname(texture_export_path)
 
-            # Miramos si el path es un pattern de UDIMs
-            if "<udim>" in texture_work_path.lower():
+            texture_work_path_spt, ext = os.path.splitext(texture_work_path)
+            texture_work_path_spt2, seq = os.path.splitext(texture_work_path_spt)
 
-                glob_pattern = texture_work_path.replace("<UDIM>", "????")
+            print(f"✓ TEXTURE WORK PATHHHHHHHHHH ---- {texture_work_path}")
+
+            if seq.startswith("."):
+                texture_work_path_aux = ".".join([texture_work_path_spt2, "<udim>", ext[1:]])
+            else:
+                texture_work_path_aux = texture_work_path
+
+            # Miramos si el path es un pattern de UDIMs
+            if "<udim>" in texture_work_path_aux.lower():
+
+                glob_pattern = texture_work_path_aux.lower().replace("<udim>", "????")
 
                 # Busca todos los archivos que coincidan
                 udim_files = glob.glob(glob_pattern)

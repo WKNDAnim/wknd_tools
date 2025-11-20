@@ -27,7 +27,7 @@ def create_version(context, version_name, description=""):
         'project': context.project,
         'entity': context.entity,
         'sg_task': context.task,
-        'user': context.user,
+        'user': context.user or "",
         'code': version_name,
         'sg_status_list': 'rev',
         'description': description or f"Published version {version_name}"

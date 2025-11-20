@@ -15,11 +15,24 @@ importlib.reload(add_attributes)
 class Publisher:
     """Handles publishing logic without UI"""
 
-    def __init__(self, context, current_version, description=None, asset_type=None, use_playblast=False, media_folder=None, log_callback=None):
+    def __init__(self, context, current_version, description=None, asset_type=None, use_playblast=False, media_folder=None, log_callback=None, engine=None, sg=None, tk=None):
+
+        if sg and tk:
+            # Get APIs from constructor if passed
+            self.tk = tk
+            self.sg = sg
+        else:
+            # Try to get the engine from UI
+            try:
+                self.engine = sgtk.platform.current_engine()
+            except:
+                self.engine = engine
+
+            # Get TK and SG from engine or params
+            self.tk = self.engine.sgtk
+            self.sg = self.engine.shotgun
+
         self.context = context
-        self.engine = sgtk.platform.current_engine()
-        self.tk = self.engine.sgtk
-        self.sg = self.engine.shotgun
         self.file_name = ''
         self.log_callback = log_callback
         self.current_version = current_version
@@ -38,7 +51,14 @@ class Publisher:
         """Log message (call callback if provided)"""
 
         if self.log_callback:
-            self.log_callback(message)  # ← Llama al callback del UI
+            try:
+                self.log_callback(message)  # ← Llama al callback del UI
+                try:
+                    self.engine.logger.debug(message)
+                except:
+                    pass
+            except:
+                self.log_callback.info(message)
 
     def publish(self):
 
@@ -47,25 +67,38 @@ class Publisher:
         ##################
 
         self.log("Creating Version in ShotGrid...")
+        self.log(f"CONTEXT --> {self.context}")
 
         # Get current file
         self.file_path = mc.file(query=True, sceneName=True)
+        self.log(self.file_path)
         self.file_name = os.path.splitext(os.path.basename(self.file_path))[0]
+        self.log(self.file_name)
 
         # Get templates
         if self.context.entity['type'].lower() == "asset":
             self.scene_work_template = self.tk.templates["maya_asset_work"]
-            self.movie_template = self.tk.templates["maya_asset_playblast_publish"]
+            self.log(f" self.scene_work_template --> {self.scene_work_template}")
+            try:
+                self.movie_template = self.tk.templates["maya_asset_playblast_publish"]
+            except:
+                self.movie_template = False
         else:
             self.scene_work_template = self.tk.templates["maya_shot_work"]
             self.movie_template = self.tk.templates["maya_shot_playblast_publish"]
 
         # Get fields from file
         self.scene_fields = self.scene_work_template.get_fields(self.file_path)
+        self.log(f" self.scene_fields --> {self.scene_fields}")
 
         # Get version info
-        self.version_movie_path = self.movie_template.apply_fields(self.scene_fields)
-        self.version_name, self.version_ext = os.path.splitext(os.path.basename(self.version_movie_path))
+        if self.movie_template:
+            self.version_movie_path = self.movie_template.apply_fields(self.scene_fields)
+            self.version_name, self.version_ext = os.path.splitext(os.path.basename(self.version_movie_path))
+        else:
+            self.version_movie_path = ""
+            self.version_name = f'{self.scene_fields["Asset"]}_{self.scene_fields["name"]}_{self.scene_fields["Task"]}_v{self.scene_fields["version"]:03d}'
+            self.version_ext = ".mov"
 
         # Get User description
         description_with_work_path = f"{self.description} - (Published from {self.file_name})"
@@ -181,16 +214,19 @@ class Publisher:
         # Render
         else:
 
-            self.log("Creating movie from folder images...")
+            try:
+                self.log("Creating movie from folder images...")
 
-            output_video = playblast_tool.create_movie_from_folder(self.media_folder, output_path=self.version_movie_path)
-            if output_video:
+                output_video = playblast_tool.create_movie_from_folder(self.media_folder, output_path=self.version_movie_path)
+                if output_video:
 
-                self.log("Uploading video...")
+                    self.log("Uploading video...")
 
-                version_core.upload_video(self.version['id'], output_video)
+                    version_core.upload_video(self.version['id'], output_video)
 
-                self.log("✓ Video Thumbnail Uploaded\n")
+                    self.log("✓ Video Thumbnail Uploaded\n")
+            except:
+                pass
 
         ####################
         # Version up Scene #
