@@ -15,6 +15,9 @@ Release Types:
 - alpha: Early development, may have breaking changes
 """
 
+import os
+import subprocess
+
 __version__ = "1.0.0"
 __version_info__ = {
     "major": 1,

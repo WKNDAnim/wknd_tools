@@ -143,17 +143,17 @@ class Publisher:
                 self._publish_Ass()
 
         # Export for Grooming Task cacacaca
-        elif self.context.task['name'] == 'Grooming':
+        elif self.context.task['name'] == 'Groom':
             # Export geo grp as alembic cache
-            self._publish_alembic(1001, 1001)
-
+            # self._publish_alembic(1001, 1001)
+            print ("ESTAMOS PROBANDO")
             # Export geo grp and hair grp as maya .ma(groom dpt debe guardar el pelo IGS en un grupo llamado HAIR, se exportan los dos grupos como .ma)
-
+            self._publish_maya_asset()
             # Export hair as .xgip(se crea un xgip a partir del pelo que haya dentro del grupo HAIR)
-
+            
             # Export hair shader(se exporta el shader igual que en shading)
-
-            # Export textures (a partir de los shaders, encontramos las texturas, y las publicamos en carpetas "v003/COL/asset_COL_v003.1001.exr")
+            self._publish_shaders()
+            
 
         # LAYOUT
         elif self.context.task['name'] == 'Layout':
@@ -281,6 +281,10 @@ class Publisher:
         # Choose what is going to be exported on maya file
         if self.asset_type == 'ELEM':
             ma_export_object = self.context.entity['name']
+
+        elif self.context.task['name'] == 'Groom':
+            ma_export_object = f"{self.context.entity['name']}|hair"
+        
         else:
             ma_export_object = f"{self.context.entity['name']}|geo"
 
@@ -351,7 +355,11 @@ class Publisher:
         textures_export_folder = template.apply_fields(self.scene_fields)
 
         # Export
-        shaders_scene_path, textures_dict = exporters.export_shaders_and_textures(self.context.entity['name'], shaders_path, textures_export_folder)
+
+        if self.context.task['name'] == 'Grooming':
+            shaders_scene_path, textures_dict = exporters.export_shaders_and_textures_for_hair(self.context.entity['name'], shaders_path, textures_export_folder)
+        else:
+            shaders_scene_path, textures_dict = exporters.export_shaders_and_textures(self.context.entity['name'], shaders_path, textures_export_folder)
 
         # Register Publish
         self._register_publish_to_version(self.context, shaders_scene_path, self.scene_fields["version"], "Maya Shaders", version_entity=self.version, extra_info={"sg_textures": str(textures_dict)})
