@@ -2,6 +2,7 @@ import maya.cmds as cmds
 import maya.OpenMayaUI as omui
 import sgtk
 import maya.cmds as cmds
+import maya.cmds as mc
 from ..core import exporters
 
 try:
