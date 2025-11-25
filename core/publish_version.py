@@ -71,14 +71,11 @@ class Publisher:
 
         # Get current file
         self.file_path = mc.file(query=True, sceneName=True)
-        self.log(self.file_path)
         self.file_name = os.path.splitext(os.path.basename(self.file_path))[0]
-        self.log(self.file_name)
 
         # Get templates
         if self.context.entity['type'].lower() == "asset":
             self.scene_work_template = self.tk.templates["maya_asset_work"]
-            self.log(f" self.scene_work_template --> {self.scene_work_template}")
             try:
                 self.movie_template = self.tk.templates["maya_asset_playblast_publish"]
             except:
@@ -89,7 +86,6 @@ class Publisher:
 
         # Get fields from file
         self.scene_fields = self.scene_work_template.get_fields(self.file_path)
-        self.log(f" self.scene_fields --> {self.scene_fields}")
 
         # Get version info
         if self.movie_template:
@@ -104,7 +100,7 @@ class Publisher:
         description_with_work_path = f"{self.description} - (Published from {self.file_name})"
 
         # Create version on SG
-        self.version = version_core.create_version(self.context, self.version_name, description_with_work_path)
+        self.version = version_core.create_version(self.context, self.version_name, description_with_work_path, sg=self.sg)
         self.results['version'] = self.version
 
         self.log(f"✓ Version created: {self.version['code']}\n")
@@ -128,16 +124,23 @@ class Publisher:
         # Export for Shading Task
         elif self.context.task['name'] == 'Shading':
 
+            self.log("AQUI EN SHADINGGGGGGGGGGG")
+
             # Add attributes on each mesh
             self._add_attributes_to_meshes()
+            self.log("_add_attributes_to_meshes")
             # Export geo grp as alembic cache
             self._publish_alembic(1001, 1001)
+            self.log("_publish_alembic")
             # Export geo grp as maya .ma
             self._publish_maya_asset()
+            self.log("_publish_maya_asset")
             # Export shader and textures
             self._publish_shaders()
+            self.log("_publish_shaders")
             # Export USD 
             self._publish_usd()
+            self.log("_publish_usd")
             # Export asset as .ass geo + shaders(for elements, not props or characters)
             if self.asset_type == 'ELEM':
                 self._publish_Ass()
@@ -203,6 +206,8 @@ class Publisher:
 
                 output_video = playblast_tool.create_playblast(self.version_movie_path) # in every other case, we just need a playblast from the shot, plabackOptions define frame range
 
+            self.log(f"OUTPUT_VIDEO - {os.path.exists(output_video)} --> {output_video}\n")
+
             if output_video:
 
                 self.log("Uploading video ---------------\n")
@@ -226,7 +231,7 @@ class Publisher:
 
                     self.log("✓ Video Thumbnail Uploaded\n")
             except:
-                pass
+                output_video = False
 
         ####################
         # Version up Scene #
@@ -385,14 +390,26 @@ class Publisher:
     def _add_attributes_to_meshes(self):
 
         # This info is general for all meshes
-        self.asset_info = {'GUS_asset_id': self.context.entity['id'],
-                           'GUS_asset_name': self.context.entity['name'],
-                           'GUS_asset_type': self.asset_type,
-                           'GUS_source_scene': self.file_name,
-                           'GUS_source_task': self.context.task['name'],
-                           'GUS_publish_time': str(datetime.datetime.now()),
-                           'GUS_user_name': self.context.user['name']
-                           }
+        self.asset_info = {}
+        self.asset_info['GUS_asset_id'] = self.context.entity['id']
+        self.asset_info['GUS_asset_name'] = self.context.entity['name']
+        self.asset_info['GUS_asset_type'] = self.asset_type
+        self.asset_info['GUS_source_scene'] = self.file_name
+        self.asset_info['GUS_source_task'] = self.context.task['name']
+        self.asset_info['GUS_publish_time'] = str(datetime.datetime.now())
+        try:
+            self.asset_info['GUS_user_name'] = self.context.user['name']
+        except:
+            pass
+                           
+        # self.asset_info = {'GUS_asset_id': self.context.entity['id'],
+        #                    'GUS_asset_name': self.context.entity['name'],
+        #                    'GUS_asset_type': self.asset_type,
+        #                    'GUS_source_scene': self.file_name,
+        #                    'GUS_source_task': self.context.task['name'],
+        #                    'GUS_publish_time': str(datetime.datetime.now()),
+        #                    'GUS_user_name': self.context.user['name']
+        #                    }
 
         add_attributes.add_attributes_to_geo_meshes(self.context.entity['name'], self.asset_info)
 
@@ -411,8 +428,8 @@ class Publisher:
             dict: Created PublishedFile entity
         """
 
-        engine = sgtk.platform.current_engine()
-        tk = engine.sgtk
+        # engine = sgtk.platform.current_engine()
+        # tk = engine.sgtk
 
         # Generate publish name
         file_name = os.path.basename(file_path)
@@ -420,7 +437,7 @@ class Publisher:
 
         # Register
         publish = sgtk.util.register_publish(
-            tk,
+            self.tk,
             context,
             file_path,
             publish_name,

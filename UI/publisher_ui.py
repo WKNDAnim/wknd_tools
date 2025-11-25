@@ -50,7 +50,6 @@ class UniversalPublishUI(MayaQWidgetDockableMixin, qt.QWidget):
 
         # Obtener contexto
         self.getContext()
-        print(f"--------------------------{self.context_info}")
 
         self.buildUI()
 
