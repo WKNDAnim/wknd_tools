@@ -1,0 +1,26 @@
+name: Deploy al servidor cuando se actualiza main
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configurar clave SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # Evitar prompt de verificación de host
+          echo "Host *" > ~/.ssh/config
+          echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+
+      - name: Ejecutar git pull en el servidor
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "cd /media/naswknd/05Framework/packages/libs/wknd_tools && git pull origin main"
+          # si usas master:
+          # ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "cd /media/naswknd/05Framework/packages/libs/wknd_tools && git pull origin master"
