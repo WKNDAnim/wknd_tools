@@ -77,6 +77,10 @@ def export_alembic(object_to_export, file_path, frameIn, frameOut):
     # change file_path
     file_path = file_path.replace('\\', '/')
 
+    # Ensure we can use Abc Export
+    mc.loadPlugin('AbcExport.mll')
+    mc.loadPlugin('AbcImport.mll')
+
     abc_cmd = f'-root {root_str} -frameRange {str(frameIn)} {str(frameOut)} -noNormals -uvWrite -worldSpace -attrPrefix GUS -attrPrefix ai -attrPrefix lineWidth -dataFormat ogawa -writeVisibility -file "{file_path}"'
     mc.AbcExport(j=abc_cmd)
 

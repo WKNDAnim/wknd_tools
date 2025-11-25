@@ -27,23 +27,42 @@ def capture_viewport_sequence(start_frame=None, end_frame=None, sequence_capture
     # Playblast to temp
     temp_dir = os.path.realpath(tempfile.gettempdir())
     output_base = os.path.join(temp_dir, "wknd_capture")
+    # Create folder if not exists
+    if not os.path.exists(output_base):
+        os.makedirs(output_base)
 
     if sequence_capture:
+
+        filename = "temp.mov"
+        output_base_file = os.path.join(output_base, filename)
+
         mc.playblast(
-            filename=output_base,
-            format='image',
+            filename=output_base_file,
+            format='qt',
             sequenceTime=True,
             clearCache=True,
             viewer=False,
             showOrnaments=False,
             framePadding=4,
             percent=100,
-            compression='png',
+            compression='H.264',
             quality=100,
             widthHeight=[width, height],
             startTime=start_frame,
-            endTime=end_frame
+            endTime=end_frame,
+            forceOverwrite=True,
+            # sound='miAudio',         # <-- nombre del nodo de audio
+            useTraxSounds=True       # si usas audio desde Trax / Camera Sequencer
         )
+
+        # Restore
+        mc.currentTime(original_time)
+
+        # Find generated files
+        return {
+            'files': output_base_file,
+            'format': 'qt'
+        }
 
     else:
 
@@ -63,18 +82,19 @@ def capture_viewport_sequence(start_frame=None, end_frame=None, sequence_capture
             endTime=end_frame
         )
 
-    # Restore
-    mc.currentTime(original_time)
+        # Find generated files
+        files = sorted(glob.glob(os.path.join(temp_dir, "wknd_capture.*.png")))
+        pattern = os.path.join(temp_dir, "wknd_capture.%04d.png")
 
-    # Find generated files
-    files = sorted(glob.glob(os.path.join(temp_dir, "wknd_capture.*.png")))
-    pattern = os.path.join(temp_dir, "wknd_capture.%04d.png")
-    return {
-        'pattern': pattern,
-        'files': files,
-        'format': 'png',
-        'count': len(files)
-    }
+        # Restore
+        mc.currentTime(original_time)
+
+        return {
+            'pattern': pattern,
+            'files': files,
+            'format': 'png',
+            'count': len(files)
+        }
 
 
 def _get_active_panel():
