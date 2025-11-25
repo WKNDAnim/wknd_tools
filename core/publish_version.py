@@ -152,7 +152,7 @@ class Publisher:
             # Export hair as .xgip(se crea un xgip a partir del pelo que haya dentro del grupo HAIR)
             
             # Export hair shader(se exporta el shader igual que en shading)
-            self._publish_shaders()
+            self._publish_shaders() # Exporta el shader usando la funcion export_shader_and_textures_for_hair, no la normal
             
 
         # LAYOUT

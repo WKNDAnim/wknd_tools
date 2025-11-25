@@ -41,7 +41,7 @@ def has_animation(node):
     
     # Buscar keyframes en cada nodo
     for check_node in all_nodes:
-        # Verificar si el nodo tiene keyframes
+        # Verificar si el nodo tiene keyframes para ponerlo en la lista
         keyframes = cmds.keyframe(check_node, query=True, keyframeCount=True)
         if keyframes and keyframes > 0:
             return True
