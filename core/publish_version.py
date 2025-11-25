@@ -15,11 +15,24 @@ importlib.reload(add_attributes)
 class Publisher:
     """Handles publishing logic without UI"""
 
-    def __init__(self, context, current_version, description=None, asset_type=None, use_playblast=False, media_folder=None, log_callback=None):
+    def __init__(self, context, current_version, description=None, asset_type=None, use_playblast=False, media_folder=None, log_callback=None, engine=None, sg=None, tk=None):
+
+        if sg and tk:
+            # Get APIs from constructor if passed
+            self.tk = tk
+            self.sg = sg
+        else:
+            # Try to get the engine from UI
+            try:
+                self.engine = sgtk.platform.current_engine()
+            except:
+                self.engine = engine
+
+            # Get TK and SG from engine or params
+            self.tk = self.engine.sgtk
+            self.sg = self.engine.shotgun
+
         self.context = context
-        self.engine = sgtk.platform.current_engine()
-        self.tk = self.engine.sgtk
-        self.sg = self.engine.shotgun
         self.file_name = ''
         self.log_callback = log_callback
         self.current_version = current_version
@@ -38,7 +51,14 @@ class Publisher:
         """Log message (call callback if provided)"""
 
         if self.log_callback:
-            self.log_callback(message)  # ← Llama al callback del UI
+            try:
+                self.log_callback(message)  # ← Llama al callback del UI
+                try:
+                    self.engine.logger.debug(message)
+                except:
+                    pass
+            except:
+                self.log_callback.info(message)
 
     def publish(self):
 
@@ -47,6 +67,7 @@ class Publisher:
         ##################
 
         self.log("Creating Version in ShotGrid...")
+        self.log(f"CONTEXT --> {self.context}")
 
         # Get current file
         self.file_path = mc.file(query=True, sceneName=True)
@@ -55,7 +76,10 @@ class Publisher:
         # Get templates
         if self.context.entity['type'].lower() == "asset":
             self.scene_work_template = self.tk.templates["maya_asset_work"]
-            self.movie_template = self.tk.templates["maya_asset_playblast_publish"]
+            try:
+                self.movie_template = self.tk.templates["maya_asset_playblast_publish"]
+            except:
+                self.movie_template = False
         else:
             self.scene_work_template = self.tk.templates["maya_shot_work"]
             self.movie_template = self.tk.templates["maya_shot_playblast_publish"]
@@ -64,14 +88,19 @@ class Publisher:
         self.scene_fields = self.scene_work_template.get_fields(self.file_path)
 
         # Get version info
-        self.version_movie_path = self.movie_template.apply_fields(self.scene_fields)
-        self.version_name, self.version_ext = os.path.splitext(os.path.basename(self.version_movie_path))
+        if self.movie_template:
+            self.version_movie_path = self.movie_template.apply_fields(self.scene_fields)
+            self.version_name, self.version_ext = os.path.splitext(os.path.basename(self.version_movie_path))
+        else:
+            self.version_movie_path = ""
+            self.version_name = f'{self.scene_fields["Asset"]}_{self.scene_fields["name"]}_{self.scene_fields["Task"]}_v{self.scene_fields["version"]:03d}'
+            self.version_ext = ".mov"
 
         # Get User description
         description_with_work_path = f"{self.description} - (Published from {self.file_name})"
 
         # Create version on SG
-        self.version = version_core.create_version(self.context, self.version_name, description_with_work_path)
+        self.version = version_core.create_version(self.context, self.version_name, description_with_work_path, sg=self.sg)
         self.results['version'] = self.version
 
         self.log(f"✓ Version created: {self.version['code']}\n")
@@ -95,21 +124,28 @@ class Publisher:
         # Export for Shading Task
         elif self.context.task['name'] == 'Shading':
 
+            self.log("AQUI EN SHADINGGGGGGGGGGG")
+
             # Add attributes on each mesh
             self._add_attributes_to_meshes()
+            self.log("_add_attributes_to_meshes")
             # Export geo grp as alembic cache
             self._publish_alembic(1001, 1001)
+            self.log("_publish_alembic")
             # Export geo grp as maya .ma
             self._publish_maya_asset()
+            self.log("_publish_maya_asset")
             # Export shader and textures
             self._publish_shaders()
+            self.log("_publish_shaders")
             # Export USD 
             self._publish_usd()
+            self.log("_publish_usd")
             # Export asset as .ass geo + shaders(for elements, not props or characters)
             if self.asset_type == 'ELEM':
                 self._publish_Ass()
 
-        # Export for Grooming Task
+        # Export for Grooming Task cacacaca
         elif self.context.task['name'] == 'Grooming':
             # Export geo grp as alembic cache
             self._publish_alembic(1001, 1001)
@@ -170,6 +206,8 @@ class Publisher:
 
                 output_video = playblast_tool.create_playblast(self.version_movie_path) # in every other case, we just need a playblast from the shot, plabackOptions define frame range
 
+            self.log(f"OUTPUT_VIDEO - {os.path.exists(output_video)} --> {output_video}\n")
+
             if output_video:
 
                 self.log("Uploading video ---------------\n")
@@ -181,16 +219,19 @@ class Publisher:
         # Render
         else:
 
-            self.log("Creating movie from folder images...")
+            try:
+                self.log("Creating movie from folder images...")
 
-            output_video = playblast_tool.create_movie_from_folder(self.media_folder, output_path=self.version_movie_path)
-            if output_video:
+                output_video = playblast_tool.create_movie_from_folder(self.media_folder, output_path=self.version_movie_path)
+                if output_video:
 
-                self.log("Uploading video...")
+                    self.log("Uploading video...")
 
-                version_core.upload_video(self.version['id'], output_video)
+                    version_core.upload_video(self.version['id'], output_video)
 
-                self.log("✓ Video Thumbnail Uploaded\n")
+                    self.log("✓ Video Thumbnail Uploaded\n")
+            except:
+                output_video = False
 
         ####################
         # Version up Scene #
@@ -349,14 +390,26 @@ class Publisher:
     def _add_attributes_to_meshes(self):
 
         # This info is general for all meshes
-        self.asset_info = {'GUS_asset_id': self.context.entity['id'],
-                           'GUS_asset_name': self.context.entity['name'],
-                           'GUS_asset_type': self.asset_type,
-                           'GUS_source_scene': self.file_name,
-                           'GUS_source_task': self.context.task['name'],
-                           'GUS_publish_time': str(datetime.datetime.now()),
-                           'GUS_user_name': self.context.user['name']
-                           }
+        self.asset_info = {}
+        self.asset_info['GUS_asset_id'] = self.context.entity['id']
+        self.asset_info['GUS_asset_name'] = self.context.entity['name']
+        self.asset_info['GUS_asset_type'] = self.asset_type
+        self.asset_info['GUS_source_scene'] = self.file_name
+        self.asset_info['GUS_source_task'] = self.context.task['name']
+        self.asset_info['GUS_publish_time'] = str(datetime.datetime.now())
+        try:
+            self.asset_info['GUS_user_name'] = self.context.user['name']
+        except:
+            pass
+                           
+        # self.asset_info = {'GUS_asset_id': self.context.entity['id'],
+        #                    'GUS_asset_name': self.context.entity['name'],
+        #                    'GUS_asset_type': self.asset_type,
+        #                    'GUS_source_scene': self.file_name,
+        #                    'GUS_source_task': self.context.task['name'],
+        #                    'GUS_publish_time': str(datetime.datetime.now()),
+        #                    'GUS_user_name': self.context.user['name']
+        #                    }
 
         add_attributes.add_attributes_to_geo_meshes(self.context.entity['name'], self.asset_info)
 
@@ -375,8 +428,8 @@ class Publisher:
             dict: Created PublishedFile entity
         """
 
-        engine = sgtk.platform.current_engine()
-        tk = engine.sgtk
+        # engine = sgtk.platform.current_engine()
+        # tk = engine.sgtk
 
         # Generate publish name
         file_name = os.path.basename(file_path)
@@ -384,7 +437,7 @@ class Publisher:
 
         # Register
         publish = sgtk.util.register_publish(
-            tk,
+            self.tk,
             context,
             file_path,
             publish_name,

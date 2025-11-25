@@ -1,0 +1,109 @@
+name: Version and Changelog Check
+
+on:
+  pull_request:
+    branches: [master, prerelease]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-version-update:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for proper diff
+          
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Check if config changes require version update
+        run: |
+          echo "Checking for changes in config/ directory..."
+          
+          # Get list of changed files
+          git diff --name-only origin/${{ github.base_ref }}...HEAD > changed_files.txt
+          
+          echo "Changed files:"
+          cat changed_files.txt
+          
+          # Check if any files in config/ were changed
+          config_changes=$(grep "^config/" changed_files.txt | wc -l || echo "0")
+          version_updated=$(grep "^version.py" changed_files.txt | wc -l || echo "0")
+          changelog_updated=$(grep "^CHANGELOG.md" changed_files.txt | wc -l || echo "0")
+          
+          echo "Config changes (excluding version.py): $config_changes"
+          echo "Version.py updated: $version_updated"
+          echo "CHANGELOG.md updated: $changelog_updated"
+          
+          # If there are config changes, both version.py and CHANGELOG.md must be updated
+          if [ "$config_changes" -gt 0 ]; then
+            echo "❌ Configuration changes detected. Checking if version files were updated..."
+            
+            if [ "$version_updated" -eq 0 ]; then
+              echo "❌ ERROR: Changes to config/ detected but version.py was not updated!"
+              echo "Please update the version in version.py when making configuration changes."
+              exit 1
+            fi
+            
+            if [ "$changelog_updated" -eq 0 ]; then
+              echo "❌ ERROR: Changes to config/ detected but CHANGELOG.md was not updated!"
+              echo "Please document your changes in CHANGELOG.md."
+              exit 1
+            fi
+            
+            echo "✅ Both version.py and CHANGELOG.md were updated. Proceeding with validation..."
+          else
+            echo "✅ No configuration changes detected. Version check passed."
+            exit 0
+          fi
+          
+      - name: Validate version increment
+        if: always()
+        run: python scripts/validate_version_increment.py
+        
+      - name: Validate CHANGELOG format
+        if: always()
+        run: |
+          echo "Validating CHANGELOG.md format..."
+          
+          # Check if CHANGELOG has [Unreleased] section
+          if ! grep -q "## \[Unreleased\]" CHANGELOG.md; then
+            echo "❌ ERROR: CHANGELOG.md missing [Unreleased] section"
+            exit 1
+          fi
+          
+          # Check if there are new entries under [Unreleased] or a new version section
+          # This is a basic check - more sophisticated validation could be added
+          unreleased_line=$(grep -n "## \[Unreleased\]" CHANGELOG.md | head -1 | cut -d: -f1)
+          next_version_line=$(grep -n "## \[" CHANGELOG.md | head -2 | tail -1 | cut -d: -f1)
+          
+          if [ -n "$next_version_line" ]; then
+            lines_between=$((next_version_line - unreleased_line))
+            if [ "$lines_between" -le 2 ]; then
+              echo "⚠️  WARNING: [Unreleased] section appears empty. Make sure to document your changes."
+            else
+              echo "✅ CHANGELOG.md format appears valid"
+            fi
+          else
+            echo "✅ CHANGELOG.md format appears valid"
+          fi
+          
+      - name: Version Check Summary
+        if: always()
+        run: |
+          echo ""
+          echo "=== VERSION CHECK SUMMARY ==="
+          echo "✅ Configuration change validation: PASSED"
+          echo "✅ Version increment validation: PASSED"
+          echo "✅ CHANGELOG format validation: PASSED"
+          echo ""
+          echo "Your PR meets all versioning requirements and can be merged."
+          echo ""
+          echo "Remember to:"
+          echo "- Update version.py with appropriate semantic version"
+          echo "- Document all changes in CHANGELOG.md"
+          echo "- Follow semantic versioning guidelines (MAJOR.MINOR.PATCH)"

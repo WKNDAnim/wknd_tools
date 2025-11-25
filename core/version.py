@@ -2,7 +2,7 @@
 import sgtk
 
 
-def create_version(context, version_name, description=""):
+def create_version(context, version_name, description="", sg=None):
     """
     Create a Version in ShotGrid
 
@@ -15,7 +15,8 @@ def create_version(context, version_name, description=""):
         dict: Created Version entity
     """
     engine = sgtk.platform.current_engine()
-    sg = engine.shotgun
+    if not sg:
+        sg = engine.shotgun
 
     if not context.entity:
         raise ValueError("No entity in context")
@@ -27,11 +28,13 @@ def create_version(context, version_name, description=""):
         'project': context.project,
         'entity': context.entity,
         'sg_task': context.task,
-        'user': context.user,
         'code': version_name,
         'sg_status_list': 'rev',
         'description': description or f"Published version {version_name}"
     }
+
+    if context.user:
+        version_data['user'] = context.user
 
     version = sg.create('Version', version_data)
 
