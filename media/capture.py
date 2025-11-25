@@ -35,6 +35,8 @@ def capture_viewport_sequence(start_frame=None, end_frame=None, sequence_capture
 
         filename = "temp.mov"
         output_base_file = os.path.join(output_base, filename)
+        width = 1280
+        height = 720
 
         mc.playblast(
             filename=output_base_file,
