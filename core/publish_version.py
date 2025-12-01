@@ -92,6 +92,7 @@ class Publisher:
             self.version_movie_path = self.movie_template.apply_fields(self.scene_fields)
             self.version_name, self.version_ext = os.path.splitext(os.path.basename(self.version_movie_path))
         else:
+            self.log(f"WARNING: No movie version path found...\n")
             self.version_movie_path = ""
             self.version_name = f'{self.scene_fields["Asset"]}_{self.scene_fields["name"]}_{self.scene_fields["Task"]}_v{self.scene_fields["version"]:03d}'
             self.version_ext = ".mov"
@@ -124,39 +125,31 @@ class Publisher:
         # Export for Shading Task
         elif self.context.task['name'] == 'Shading':
 
-            self.log("AQUI EN SHADINGGGGGGGGGGG")
-
             # Add attributes on each mesh
             self._add_attributes_to_meshes()
-            self.log("_add_attributes_to_meshes")
             # Export geo grp as alembic cache
             self._publish_alembic(1001, 1001)
-            self.log("_publish_alembic")
             # Export geo grp as maya .ma
             self._publish_maya_asset()
-            self.log("_publish_maya_asset")
             # Export shader and textures
             self._publish_shaders()
-            self.log("_publish_shaders")
-            # Export USD 
+            # Export USD
             self._publish_usd()
-            self.log("_publish_usd")
             # Export asset as .ass geo + shaders(for elements, not props or characters)
             if self.asset_type == 'ELEM':
                 self._publish_Ass()
 
         # Export for Grooming Task cacacaca
-        elif self.context.task['name'] == 'Grooming':
+        elif self.context.task['name'] == 'Groom':
             # Export geo grp as alembic cache
-            self._publish_alembic(1001, 1001)
+            # self._publish_alembic(1001, 1001)
 
             # Export geo grp and hair grp as maya .ma(groom dpt debe guardar el pelo IGS en un grupo llamado HAIR, se exportan los dos grupos como .ma)
-
+            self._publish_maya_asset()
             # Export hair as .xgip(se crea un xgip a partir del pelo que haya dentro del grupo HAIR)
 
             # Export hair shader(se exporta el shader igual que en shading)
-
-            # Export textures (a partir de los shaders, encontramos las texturas, y las publicamos en carpetas "v003/COL/asset_COL_v003.1001.exr")
+            self._publish_shaders() # Exporta el shader usando la funcion export_shader_and_textures_for_hair, no la normal
 
         # LAYOUT
         elif self.context.task['name'] == 'Layout':
@@ -197,6 +190,7 @@ class Publisher:
         if self.use_playblast:
 
             self.log("Capturing playblast ---------------\n")
+            self.log(self.version_movie_path)
 
             if self.context.step['name'] == 'Layout':  # if we are in layout, we need to publish full sequence, unless we are on a shot TEMP-----------------------------------------------------------
 
@@ -286,6 +280,10 @@ class Publisher:
         # Choose what is going to be exported on maya file
         if self.asset_type == 'ELEM':
             ma_export_object = self.context.entity['name']
+
+        elif self.context.task['name'] == 'Groom':
+            ma_export_object = f"{self.context.entity['name']}|hair"
+        
         else:
             ma_export_object = f"{self.context.entity['name']}|geo"
 
@@ -304,6 +302,8 @@ class Publisher:
 
         template = self.tk.templates["asset_alembic_cache"]
         abc_path = template.apply_fields(self.scene_fields)
+
+        # abc_export_object = self.context.entity['name']
 
         # Choose what is going to be exported on alembic file
         if self.asset_type == 'ELEM' or self.context.step['name'] == "Surfacing":
@@ -356,7 +356,11 @@ class Publisher:
         textures_export_folder = template.apply_fields(self.scene_fields)
 
         # Export
-        shaders_scene_path, textures_dict = exporters.export_shaders_and_textures(self.context.entity['name'], shaders_path, textures_export_folder)
+
+        if self.context.task['name'] == 'Grooming':
+            shaders_scene_path, textures_dict = exporters.export_shaders_and_textures_for_hair(self.context.entity['name'], shaders_path, textures_export_folder)
+        else:
+            shaders_scene_path, textures_dict = exporters.export_shaders_and_textures(self.context.entity['name'], shaders_path, textures_export_folder)
 
         # Register Publish
         self._register_publish_to_version(self.context, shaders_scene_path, self.scene_fields["version"], "Maya Shaders", version_entity=self.version, extra_info={"sg_textures": str(textures_dict)})
@@ -401,16 +405,7 @@ class Publisher:
             self.asset_info['GUS_user_name'] = self.context.user['name']
         except:
             pass
-                           
-        # self.asset_info = {'GUS_asset_id': self.context.entity['id'],
-        #                    'GUS_asset_name': self.context.entity['name'],
-        #                    'GUS_asset_type': self.asset_type,
-        #                    'GUS_source_scene': self.file_name,
-        #                    'GUS_source_task': self.context.task['name'],
-        #                    'GUS_publish_time': str(datetime.datetime.now()),
-        #                    'GUS_user_name': self.context.user['name']
-        #                    }
-
+        
         add_attributes.add_attributes_to_geo_meshes(self.context.entity['name'], self.asset_info)
 
     def _register_publish_to_version(self, context, file_path, version_number, file_type, version_entity=None, extra_info=None):
