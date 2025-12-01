@@ -17,7 +17,7 @@ def add_attributes_to_geo_meshes(asset_name, asset_info):
 def add_attributes(mesh, asset_info):
 
     # Get specific info for that mesh
-    shading_engine = mc.listConnections(mesh, source=False, destination=True)[0]
+    shading_engine = mc.listConnections(mesh, source=False, destination=True,type='shadingEngine')[0]
     asset_info.update({"GUS_shading_grp": shading_engine})
 
     # Create Attributes
