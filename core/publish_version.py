@@ -92,6 +92,7 @@ class Publisher:
             self.version_movie_path = self.movie_template.apply_fields(self.scene_fields)
             self.version_name, self.version_ext = os.path.splitext(os.path.basename(self.version_movie_path))
         else:
+            self.log(f"WARNING: No movie version path found...\n")
             self.version_movie_path = ""
             self.version_name = f'{self.scene_fields["Asset"]}_{self.scene_fields["name"]}_{self.scene_fields["Task"]}_v{self.scene_fields["version"]:03d}'
             self.version_ext = ".mov"
@@ -197,6 +198,7 @@ class Publisher:
         if self.use_playblast:
 
             self.log("Capturing playblast ---------------\n")
+            self.log(self.version_movie_path)
 
             if self.context.step['name'] == 'Layout':  # if we are in layout, we need to publish full sequence, unless we are on a shot TEMP-----------------------------------------------------------
 
@@ -304,6 +306,8 @@ class Publisher:
 
         template = self.tk.templates["asset_alembic_cache"]
         abc_path = template.apply_fields(self.scene_fields)
+
+        # abc_export_object = self.context.entity['name']
 
         # Choose what is going to be exported on alembic file
         if self.asset_type == 'ELEM' or self.context.step['name'] == "Surfacing":

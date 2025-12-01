@@ -17,7 +17,6 @@ def create_playblast(output_video):
     Returns:
         str: Path to video or None
     """
-
     # Create folder if needed
     if not os.path.exists(os.path.dirname(output_video)):
         os.makedirs(os.path.dirname(output_video))
