@@ -125,23 +125,16 @@ class Publisher:
         # Export for Shading Task
         elif self.context.task['name'] == 'Shading':
 
-            self.log("AQUI EN SHADINGGGGGGGGGGG")
-
             # Add attributes on each mesh
             self._add_attributes_to_meshes()
-            self.log("_add_attributes_to_meshes")
             # Export geo grp as alembic cache
             self._publish_alembic(1001, 1001)
-            self.log("_publish_alembic")
             # Export geo grp as maya .ma
             self._publish_maya_asset()
-            self.log("_publish_maya_asset")
             # Export shader and textures
             self._publish_shaders()
-            self.log("_publish_shaders")
-            # Export USD 
+            # Export USD
             self._publish_usd()
-            self.log("_publish_usd")
             # Export asset as .ass geo + shaders(for elements, not props or characters)
             if self.asset_type == 'ELEM':
                 self._publish_Ass()
@@ -150,14 +143,13 @@ class Publisher:
         elif self.context.task['name'] == 'Groom':
             # Export geo grp as alembic cache
             # self._publish_alembic(1001, 1001)
-            print ("ESTAMOS PROBANDO")
+
             # Export geo grp and hair grp as maya .ma(groom dpt debe guardar el pelo IGS en un grupo llamado HAIR, se exportan los dos grupos como .ma)
             self._publish_maya_asset()
             # Export hair as .xgip(se crea un xgip a partir del pelo que haya dentro del grupo HAIR)
-            
+
             # Export hair shader(se exporta el shader igual que en shading)
             self._publish_shaders() # Exporta el shader usando la funcion export_shader_and_textures_for_hair, no la normal
-            
 
         # LAYOUT
         elif self.context.task['name'] == 'Layout':
@@ -413,16 +405,7 @@ class Publisher:
             self.asset_info['GUS_user_name'] = self.context.user['name']
         except:
             pass
-                           
-        # self.asset_info = {'GUS_asset_id': self.context.entity['id'],
-        #                    'GUS_asset_name': self.context.entity['name'],
-        #                    'GUS_asset_type': self.asset_type,
-        #                    'GUS_source_scene': self.file_name,
-        #                    'GUS_source_task': self.context.task['name'],
-        #                    'GUS_publish_time': str(datetime.datetime.now()),
-        #                    'GUS_user_name': self.context.user['name']
-        #                    }
-
+        
         add_attributes.add_attributes_to_geo_meshes(self.context.entity['name'], self.asset_info)
 
     def _register_publish_to_version(self, context, file_path, version_number, file_type, version_entity=None, extra_info=None):

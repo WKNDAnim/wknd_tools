@@ -119,7 +119,7 @@ def export_shaders_and_textures_for_hair(asset_name, shaders_file_path, textures
 
         print(f"❌ ERROR: Cannot find {asset_name}|hair group relatives...")
         return False
-    
+
     else:
 
         mesh_shader = {}
