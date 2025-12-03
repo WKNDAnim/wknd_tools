@@ -405,7 +405,7 @@ class Publisher:
             self.asset_info['GUS_user_name'] = self.context.user['name']
         except:
             pass
-        
+
         add_attributes.add_attributes_to_geo_meshes(self.context.entity['name'], self.asset_info)
 
     def _register_publish_to_version(self, context, file_path, version_number, file_type, version_entity=None, extra_info=None):
