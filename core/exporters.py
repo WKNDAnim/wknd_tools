@@ -106,6 +106,71 @@ def export_ass(object_to_export, file_path):
     mm.eval(line)
     mc.select(cl=1)
 
+def export_shaders_and_textures_for_hair(asset_name, shaders_file_path, textures_export_folder):
+
+    ############################
+    # Get Shaders and Textures #
+    ############################
+
+    # Get all shaders and textures from all meshes on geo grp from asset name
+    hair_in_asset = mc.listRelatives(f"{asset_name}|hair", ad=True, type='xgmSplineDescription', f=True)
+
+    if not hair_in_asset:
+
+        print(f"❌ ERROR: Cannot find {asset_name}|hair group relatives...")
+        return False
+
+    else:
+
+        mesh_shader = {}
+        shaders_list = list()
+        for hair in hair_in_asset:
+            shading_engine = mc.listConnections(hair, source=False, destination=True,type='shadingEngine')
+            if not shading_engine:
+                print(f" WARNING: No Shading Engine for {hair}.")
+                continue
+            mesh_shader[hair] = {}
+            mesh_shader[hair]['shading_engine'] = shading_engine[0]
+            shaders_list.append(shading_engine[0])
+            mesh_shader[hair]['textures'] = shading_get_textures_from_sg.get_textures_from_shading_groups(shading_engine)
+
+        # Print dict for debug
+        import pprint
+        pprint.pprint(mesh_shader)
+
+    ###################
+    # Export textures #
+    ###################
+
+    texture_work_paths = _export_textures(mesh_shader, textures_export_folder)
+
+    ##################
+    # Export shaders #
+    ##################
+
+    shaders_file_path = _export_shaders(shaders_list, shaders_file_path)
+
+    ##############################################
+    # RePath texture nodes to original work file #
+    ##############################################
+
+    for mesh in texture_work_paths:
+
+        for texture_node in texture_work_paths[mesh]:
+
+            # Change texture path on node for publish
+            node_type = mc.nodeType(texture_node)
+
+            if node_type == 'file':
+                # Nodo file
+                mc.setAttr(f"{texture_node}.fileTextureName", texture_work_paths[mesh][texture_node], type='string')
+
+            elif node_type == 'aiImage':
+                # Nodo aiImage
+                mc.setAttr(f"{texture_node}.filename", texture_work_paths[mesh][texture_node], type='string')
+
+    return shaders_file_path, mesh_shader
+
 
 def export_shaders_and_textures(asset_name, shaders_file_path, textures_export_folder):
 

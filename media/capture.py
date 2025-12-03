@@ -53,8 +53,7 @@ def capture_viewport_sequence(start_frame=None, end_frame=None, sequence_capture
             startTime=start_frame,
             endTime=end_frame,
             forceOverwrite=True,
-            # sound='miAudio',         # <-- nombre del nodo de audio
-            useTraxSounds=True       # si usas audio desde Trax / Camera Sequencer
+            useTraxSounds=True
         )
 
         # Restore
@@ -81,7 +80,8 @@ def capture_viewport_sequence(start_frame=None, end_frame=None, sequence_capture
             quality=100,
             widthHeight=[width, height],
             startTime=start_frame,
-            endTime=end_frame
+            endTime=end_frame,
+            forceOverwrite=True
         )
 
         # Find generated files
