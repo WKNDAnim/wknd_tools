@@ -50,6 +50,7 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         start_frame = mc.getAttr(f"{shot}.startFrame")  # Query shot's start frame.
         end_frame = mc.getAttr(f"{shot}.endFrame")  # Query shot's end frame.
         shot_camera = mc.listConnections(f"{shot}.currentCamera")[0]  # Query shot's camera.
+        log(f"shotcamera --> {shot_camera}")
 
         # Get current Shot entity
         shot_entity = sg.find_one(
@@ -109,6 +110,8 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         fields["name"] = fields_work["name"]
         fields["version"] = 1  # For animation, restart versioning
         anim_scene_path = template.apply_fields(fields)
+
+        log(f"ANIM END")
 
         ##############
         # CLEAN KEYS #
@@ -297,12 +300,6 @@ def _bake_camera(main_camera, start_frame, end_frame):
         'focalLength',
         'focusDistance',
         'fStop',
-        'horizontalFilmAperture',
-        'verticalFilmAperture',
-        'lensSqueezeRatio',
-        'horizontalFilmOffset',
-        'verticalFilmOffset',
-        'filmFitOffset',
         'nearClipPlane',
         'farClipPlane'
     ]

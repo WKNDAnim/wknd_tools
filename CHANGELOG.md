@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.5] - 2025-12-15
+
+   - Layout Splitter: Reducimos el número de atributos de la shape de cámara que bakeamos para que tarde menos
+
 ## [1.0.4] - 2025-12-11
 
 ## [1.0.3] - 2025-12-03
