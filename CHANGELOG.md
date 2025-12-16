@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.7] - 2025-12-16
+
+   - Publisher:
+      - Added function to do Playblast with Sound for Layout Single Shots
+
 ## [1.0.6] - 2025-12-16
 
    - Layout Splitter: Added camera parenting to CAMERAS group, and delete ma camera ref for ANIM

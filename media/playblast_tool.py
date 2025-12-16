@@ -10,7 +10,7 @@ import os
 import shutil
 
 
-def create_playblast(output_video):
+def create_playblast(output_video, sound=None):
     """
     Create playblast video from current camera
 
@@ -21,19 +21,26 @@ def create_playblast(output_video):
     if not os.path.exists(os.path.dirname(output_video)):
         os.makedirs(os.path.dirname(output_video))
 
-    # capture viewport
-    capture_info = capture.capture_viewport_sequence()
+    # If we use sound
+    if sound:
+        success = capture.capture_playblast_with_sound(output_video, sound)
+    else:
+        # capture viewport
+        capture_info = capture.capture_viewport_sequence(sound)
 
-    if not capture_info['files']:
-        return None
+        if capture_info:
+            if os.path.exists(capture_info):
+                return capture_info
+            elif not capture_info['files']:
+                return None
 
-    success = video_encoder.images_to_video(
-        capture_info['pattern'] ,
-        output_video,
-        'playblast')
+        success = video_encoder.images_to_video(
+            capture_info['pattern'] ,
+            output_video,
+            'playblast')
 
-    # Cleanup
-    capture.cleanup_capture_files(capture_info)
+        # Cleanup
+        capture.cleanup_capture_files(capture_info)
 
     return output_video if success else None
 
