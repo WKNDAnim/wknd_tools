@@ -38,7 +38,10 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         all_cameras.append(mc.listConnections(f"{shot}.currentCamera")[0])
     log(f"📹 Cameras: {all_cameras}")
 
-    # logic for all shots to export them separately
+    ###############
+    # SPLIT SHOTS #
+    ###############
+
     processedShots = []
     for shot in shots:
 
@@ -47,10 +50,10 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         log(f"PROCESSING SHOT 🎯 --> {shot_name}")
         if shot_name not in selectedShots:
             continue
+
         start_frame = mc.getAttr(f"{shot}.startFrame")  # Query shot's start frame.
         end_frame = mc.getAttr(f"{shot}.endFrame")  # Query shot's end frame.
         shot_camera = mc.listConnections(f"{shot}.currentCamera")[0]  # Query shot's camera.
-        log(f"shotcamera --> {shot_camera}")
 
         # Get current Shot entity
         shot_entity = sg.find_one(
@@ -111,8 +114,6 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         fields["version"] = 1  # For animation, restart versioning
         anim_scene_path = template.apply_fields(fields)
 
-        log(f"ANIM END")
-
         ##############
         # CLEAN KEYS #
         ##############
@@ -137,9 +138,6 @@ def split_scene_per_shot(context, engine, log, selectedShots):
             mc.keyframe(curve, e=1, r=1, timeChange=offset*(-1))
 
         cameraInfo, finalMovement, movements = camera_info.get_camera_movement(shot_camera)
-        log(f"--------- CAMERA_INFO --> {cameraInfo}")
-        log(f"--------- finalMovement --> {finalMovement}")
-        log(f"--------- movements --> {movements}")
 
         ##################
         # EXPORT CAMERAS #
@@ -158,8 +156,6 @@ def split_scene_per_shot(context, engine, log, selectedShots):
 
         shot_camera_baked = _bake_camera(shot_camera, start_frame-offset, end_frame-offset)
 
-        # cmd = '-root ' + shot_camera_baked + ' -frameRange ' + str(start_frame-offset) + ' ' + str(end_frame-offset) + ' -step 1 -attr focalLength -worldSpace -writeVisibility -dataFormat ogawa -file ' + camera_publish_path_abc
-        
         cmd = '-root ' + shot_camera_baked + ' -frameRange ' + str(start_frame-offset) + ' ' + str(end_frame-offset) + ' -step 1 -attr focalLength -worldSpace -writeVisibility -dataFormat ogawa -file ' + camera_publish_path_abc
         mc.AbcExport(j=cmd)
 
@@ -173,14 +169,15 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         mc.delete(shots)
 
         # Delete cameras
-        for cam in all_cameras:
-            try:
-                mc.delete(cam)
-            except:
-                pass
+        _delete_all_in_group("CAMERAS")
 
         # Import shot camera (as .ma for now)
         mc.file(camera_publish_path_ma, r=True, ignoreVersion=True, namespace=shot_camera)
+        camera_nodes = mc.ls(f"{shot_camera}:*")
+        camera_nodes.append(shot_camera_baked)
+
+        # Parent Cameras to group
+        _parent_safe(camera_nodes, "CAMERAS")
 
         # Set frame range in scene
         mc.playbackOptions(min=start_frame-offset, max=end_frame-offset, animationStartTime=start_frame-offset, animationEndTime=end_frame-offset)
@@ -200,12 +197,10 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         ####################
 
         # Remove ma camera and import alembic camera
-        ref_node = mc.referenceQuery(camera_publish_path_ma, referenceNode=True)
-        mc.file(referenceNode=ref_node, removeReference=True)
+        _delete_something(camera_nodes[0])
+        log("MA camera deleted!")
         mc.file(camera_publish_path_abc, r=True, ignoreVersion=True, namespace=shot_camera)
-
-        # # Parent Cameras to group
-        # _parent_safe(cameras, "CAMERAS")
+        log("ABC camera imported!")
 
         # if camera is static camera, lock attributes
         try:
@@ -260,26 +255,6 @@ def split_scene_per_shot(context, engine, log, selectedShots):
 
     return True
 
-def _parent_safe(nodes, parent_grp):
-    """ Parent nodes to groups in Maya"""
-    for n in nodes:
-        if not mc.objExists(n):
-            continue
-        # si ya está bajo el grupo, saltar
-        try:
-            current_parent = mc.listRelatives(n, parent=True, fullPath=True) or []
-            if current_parent and current_parent[0].split("|")[-1] == parent_grp:
-                continue
-            mc.parent(n, parent_grp)
-        except Exception:
-            # evita romper el flujo si algún nodo no puede parentarse
-            pass
-
-def _top_level_transforms():
-    """Top DAG nodes visibles en el Outliner (excluye cámaras por defecto)."""
-    roots = mc.ls(assemblies=True, long=True) or []
-    exclude = {"|persp", "|top", "|front", "|side", "|SET", "|CHAR", "|CAMERAS", "|PROPS", "|PREVIS", "|AUDIOS"}
-    return [r for r in roots if r not in exclude]
 
 def _bake_camera(main_camera, start_frame, end_frame):
 
@@ -374,3 +349,65 @@ def _bake_camera(main_camera, start_frame, end_frame):
         
     print(f"Cámara bakeada creada: {baked_camera_transform}")
     return baked_camera_transform
+
+
+def _delete_all_in_group(groupName):
+
+    # Verificar que el grupo existe
+    if not mc.objExists(groupName):
+
+        print(f"El grupo {groupName} no existe")
+
+    else:
+
+        # Buscamos dentro del grupo
+        cameras = mc.listRelatives(groupName, children=True, fullPath=True)
+
+        if cameras:
+
+            for item in cameras:
+
+                _delete_something(item)
+
+            print("Proceso completado")
+
+        else:
+            print(f"El grupo {groupName} está vacío...")
+
+
+def _delete_something(item):
+
+    # Eliminamos referencias
+    if mc.referenceQuery(item, isNodeReferenced=True):
+
+        try:
+            refFile = mc.referenceQuery(item, filename=True, withoutCopyNumber=True)
+            mc.file(refFile, removeReference=True)
+            print(f"Referencia eliminada: {refFile}")
+        except Exception as e:
+            print(f"Error al quitar referencia {item}: {e}")
+
+    else:
+
+        # Eliminamos imports
+        try:
+            mc.delete(item)
+            print(f"Objeto nativo borrado: {item}")
+        except Exception as e:
+            print(f"Error al borrar {item}: {e}")
+
+
+def _parent_safe(nodes, parent_grp):
+    """ Parent nodes to groups in Maya"""
+    for n in nodes:
+        if not mc.objExists(n):
+            continue
+        # si ya está bajo el grupo, saltar
+        try:
+            current_parent = mc.listRelatives(n, parent=True, fullPath=True) or []
+            if current_parent and current_parent[0].split("|")[-1] == parent_grp:
+                continue
+            mc.parent(n, parent_grp)
+        except Exception:
+            # evita romper el flujo si algún nodo no puede parentarse
+            pass
