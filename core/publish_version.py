@@ -1,6 +1,7 @@
 """Core publish logic (no UI)"""
 import sgtk
 import maya.cmds as mc
+import maya.mel as mel
 import os
 import datetime
 from . import exporters
@@ -192,9 +193,23 @@ class Publisher:
             self.log("Capturing playblast ---------------\n")
             self.log(self.version_movie_path)
 
-            if self.context.step['name'] == 'Layout':  # if we are in layout, we need to publish full sequence, unless we are on a shot TEMP-----------------------------------------------------------
+            if self.context.step['name'] == 'Layout':
 
-                output_video = playblast_tool.create_sequence_playblast(self.version_movie_path)
+                if self.context.task["name"].lower() == "previs":
+
+                    # if we are in layout, we need to publish full sequence
+                    output_video = playblast_tool.create_sequence_playblast(self.version_movie_path)
+
+                else:
+                    
+                    # Obtener el control del timeline (gPlayBackSlider)
+                    gPlayBackSlider = mel.eval('$tmpVar = $gPlayBackSlider')
+
+                    # Obtenemos el sonido del timeline
+                    sound_node = mc.timeControl(gPlayBackSlider, q=True, sound=True)
+
+                    # If we are in a single Shot, publish regular playblast
+                    output_video = playblast_tool.create_playblast(self.version_movie_path, sound=sound_node)
 
             else:
 
