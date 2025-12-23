@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.8] - 2025-12-23
+
+   - Añadimos el UPDATER:
+      - Es como una mini copia del tk-multi-breakdown2 que mira las referencias de la escena y las actualiza a la versión aprobada o a la última versión
+
 ## [1.0.7] - 2025-12-16
 
    - Publisher:
