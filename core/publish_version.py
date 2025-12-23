@@ -186,6 +186,8 @@ class Publisher:
         ################
 
         from ..media import playblast_tool
+        import importlib
+        importlib.reload(playblast_tool)
 
         # Playblast
         if self.use_playblast:
@@ -201,7 +203,7 @@ class Publisher:
                     output_video = playblast_tool.create_sequence_playblast(self.version_movie_path)
 
                 else:
-                    
+
                     # Obtener el control del timeline (gPlayBackSlider)
                     gPlayBackSlider = mel.eval('$tmpVar = $gPlayBackSlider')
 
