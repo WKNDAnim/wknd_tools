@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.9] - 2025-12-23
+
+   ## Added
+      - Splitter:
+         - Que se importen los audios en cada plano al hacer el split y que se copien a la carpeta del Shot
+
+   ## Fixed
+      - Splitter:
+         - Change parent_safe() to avoid parenting
+      - Create Playblast:
+         - Corregido que al hacer playblast sin sonido que no de error
+
 ## [1.0.8] - 2025-12-23
 
    - Añadimos el UPDATER:
