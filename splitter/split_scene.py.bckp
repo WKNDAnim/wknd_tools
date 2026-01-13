@@ -2,7 +2,6 @@ import sgtk
 import maya.cmds as mc
 import re
 import os
-import shutil
 
 from wknd_tools.splitter import camera_info
 import importlib
@@ -63,16 +62,6 @@ def split_scene_per_shot(context, engine, log, selectedShots):
                 ['code', 'is', shot_name]],
                 ['code']
             )
-        
-        ##############
-        # GET AUDIOS #
-        ##############
-
-        log(f"Getting audio/s for shot {shot_name}...")
-
-        audio_clips = _get_audio_clips_for_shot(start_frame, end_frame)
-
-        log(f"AUDIO ---> {audio_clips}")
 
         ###############
         # LAYOUT PATH #
@@ -184,23 +173,11 @@ def split_scene_per_shot(context, engine, log, selectedShots):
 
         # Import shot camera (as .ma for now)
         mc.file(camera_publish_path_ma, r=True, ignoreVersion=True, namespace=shot_camera)
+        camera_nodes = mc.ls(f"{shot_camera}:*")
+        camera_nodes.append(shot_camera_baked)
 
-        # solo cámaras
-        cam_shapes = mc.ls(f"{shot_camera}:*", type="camera") or []
-        cam_transforms = []
-        for s in cam_shapes:
-            p = mc.listRelatives(s, parent=True, fullPath=True)
-            if p:
-                cam_transforms.append(p[0])
-
-        # evita duplicados
-        cam_transforms = list(dict.fromkeys(cam_transforms))
-
-        _parent_safe(cam_transforms + [shot_camera_baked], "CAMERAS")
-
-        # Load Audios
-        loaded_audios = _load_audio_clips(audio_clips, offset, tk, fields["Sequence"])
-        log(f"✅ Audios Loaded!🦻 --> {loaded_audios}")        
+        # Parent Cameras to group
+        _parent_safe(camera_nodes, "CAMERAS")
 
         # Set frame range in scene
         mc.playbackOptions(min=start_frame-offset, max=end_frame-offset, animationStartTime=start_frame-offset, animationEndTime=end_frame-offset)
@@ -220,7 +197,7 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         ####################
 
         # Remove ma camera and import alembic camera
-        _delete_something(cam_transforms[0])
+        _delete_something(camera_nodes[0])
         log("MA camera deleted!")
         mc.file(camera_publish_path_abc, r=True, ignoreVersion=True, namespace=shot_camera)
         log("ABC camera imported!")
@@ -235,7 +212,7 @@ def split_scene_per_shot(context, engine, log, selectedShots):
             cam_shape = mc.listRelatives(cam, shapes=True)[0]
             mc.setAttr(f"{cam_shape}.focalLength", lock=True)
         except:
-            pass    
+            pass
 
         # Create folder
         if not os.path.exists(os.path.dirname(anim_scene_path)):
@@ -425,11 +402,6 @@ def _parent_safe(nodes, parent_grp):
     for n in nodes:
         if not mc.objExists(n):
             continue
-
-        # solo transforms
-        if mc.nodeType(n) != "transform":
-            continue
-
         # si ya está bajo el grupo, saltar
         try:
             current_parent = mc.listRelatives(n, parent=True, fullPath=True) or []
@@ -437,72 +409,5 @@ def _parent_safe(nodes, parent_grp):
                 continue
             mc.parent(n, parent_grp)
         except Exception:
+            # evita romper el flujo si algún nodo no puede parentarse
             pass
-
-
-def _get_audio_clips_for_shot(shot_start, shot_end):
-    """
-    Encuentra todos los clips de audio que se solapan con el rango del plano
-    """
-    audio_clips = []
-
-    # Obtener todos los audio nodes en la escena
-    audio_nodes = mc.ls(type='audio')
-
-    for audio in audio_nodes:
-        # Obtener offset y duración del audio
-        offset = mc.getAttr(f'{audio}.offset')
-        source_start = mc.getAttr(f'{audio}.sourceStart')
-        source_end = mc.getAttr(f'{audio}.sourceEnd')
-
-        audio_start = offset
-        audio_end = offset + (source_end - source_start)
-
-        # Verificar si hay overlap
-        if audio_start < shot_end and audio_end > shot_start:
-            # Calcular el segmento exacto que necesitamos
-            clip_info = {
-                'node': audio,
-                'filepath': mc.getAttr(f'{audio}.filename'),
-                'original_offset': offset,
-                'source_start': source_start,
-                'source_end': source_end,
-                'clip_start': max(audio_start, shot_start),
-                'clip_end': min(audio_end, shot_end)
-            }
-            audio_clips.append(clip_info)
-
-    return audio_clips
-
-
-def _load_audio_clips(audio_clips, shot_offset, tk, seq):
-    """
-    Carga múltiples clips de audio en la escena, ajustados al offset del plano
-    """
-    loaded_audios = []
-
-    template_in = tk.templates["atic_shot_layout_audio"]
-    template_out = tk.templates["maya_shot_audio"]
-
-    for clip in audio_clips:
-
-        fields_in = template_in.get_fields(clip['filepath'])
-        fields_in["Sequence"] = seq
-        audio_shot_path = template_out.apply_fields(fields_in)
-
-        # Copiamos el audio a la carpeta editorial del shot
-        shutil.copy2(clip['filepath'], audio_shot_path)
-
-        new_offset = (clip['original_offset'] - shot_offset)
-
-        audio_node = mc.sound(
-            file=audio_shot_path,
-            offset=new_offset,
-            sourceStart=clip['source_start'],
-            sourceEnd=clip['source_end'],
-            name=clip['node']
-        )
-
-        loaded_audios.append(audio_node)
-
-    return loaded_audios

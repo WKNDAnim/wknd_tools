@@ -26,7 +26,7 @@ def create_playblast(output_video, sound=None):
         success = capture.capture_playblast_with_sound(output_video, sound)
     else:
         # capture viewport
-        capture_info = capture.capture_viewport_sequence(sound)
+        capture_info = capture.capture_viewport_sequence()
 
         if capture_info:
             if os.path.exists(capture_info):
