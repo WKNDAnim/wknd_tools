@@ -22,7 +22,7 @@ __version__ = "1.0.9"
 __version_info__ = {
     "major": 1,
     "minor": 0,
-    "patch": 9,
+    "patch": 10,
     "release": "stable",  # stable, beta, alpha
     "build": None
 }
