@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.11] - 2026-01-15
+
+   - Publish version:
+      - Playblast tool:
+         - Add `Animation` to playblast with sound steps
+
 ## [1.0.10] - 2026-01-15
 
    - Improved Logging on Splitter
