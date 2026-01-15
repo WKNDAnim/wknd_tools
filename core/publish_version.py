@@ -195,7 +195,7 @@ class Publisher:
             self.log("Capturing playblast ---------------\n")
             self.log(self.version_movie_path)
 
-            if self.context.step['name'] == 'Layout':
+            if self.context.step['name'] in ['Layout', 'Animation']:
 
                 if self.context.task["name"].lower() == "previs":
 
