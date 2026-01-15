@@ -63,7 +63,7 @@ def split_scene_per_shot(context, engine, log, selectedShots):
                 ['code', 'is', shot_name]],
                 ['code']
             )
-        
+
         ##############
         # GET AUDIOS #
         ##############
@@ -77,6 +77,8 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         ###############
         # LAYOUT PATH #
         ###############
+
+        log("Getting Layout path...")
 
         # Get current layout task entity
         step_name = 'Layout'
@@ -103,9 +105,14 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         camera_publish_path_abc = template_camera_abc.apply_fields(fields)
         camera_publish_path_ma = template_camera_ma.apply_fields(fields)
 
+        log(f"camera_publish_path_abc ---> {camera_publish_path_abc}")
+        log(f"camera_publish_path_ma ---> {camera_publish_path_ma}")
+
         ##################
         # ANIMATION PATH #
         ##################
+
+        log("Getting Animation path...")
 
         # Get current shot ANIMATION task entity
         step_name = 'Animation'
@@ -125,9 +132,13 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         fields["version"] = 1  # For animation, restart versioning
         anim_scene_path = template.apply_fields(fields)
 
+        log(f"anim_scene_path ---> {anim_scene_path}")
+
         ##############
         # CLEAN KEYS #
         ##############
+
+        log("Cleaning keys...")
 
         # Delete keys out of range
         curves = mc.ls(type='animCurve') or []
@@ -150,9 +161,14 @@ def split_scene_per_shot(context, engine, log, selectedShots):
 
         cameraInfo, finalMovement, movements = camera_info.get_camera_movement(shot_camera)
 
+        log("KEYS CLEANED!\n")
+        log(f"CAMERA INFO ---> {cameraInfo}")
+
         ##################
         # EXPORT CAMERAS #
         ##################
+
+        log("Exporting cameras...")
 
         # MAYA SCENE
         if not os.path.exists(os.path.dirname(camera_publish_path_ma)):
@@ -176,6 +192,8 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         # EXPORT LAYOUT #
         #################
 
+        log("Exporting Layout...")
+
         # Delete shots from sequencer
         mc.delete(shots)
 
@@ -187,6 +205,8 @@ def split_scene_per_shot(context, engine, log, selectedShots):
 
         # solo cámaras
         cam_shapes = mc.ls(f"{shot_camera}:*", type="camera") or []
+        log(f"CAMERA SHAPES -> {cam_shapes}")
+
         cam_transforms = []
         for s in cam_shapes:
             p = mc.listRelatives(s, parent=True, fullPath=True)
@@ -195,6 +215,7 @@ def split_scene_per_shot(context, engine, log, selectedShots):
 
         # evita duplicados
         cam_transforms = list(dict.fromkeys(cam_transforms))
+        log(f"CAMERA TRANSFORMS -> {cam_transforms}")
 
         _parent_safe(cam_transforms + [shot_camera_baked], "CAMERAS")
 
