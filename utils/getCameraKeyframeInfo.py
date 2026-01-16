@@ -205,7 +205,7 @@ def get_camera_movement(camera):
     print("========= finalMovement =============")
     print(finalMovement)
 
-    return finalMovement
+    return cameraInfo, movement, finalMovement
 
 # ############ USE ####################################
 

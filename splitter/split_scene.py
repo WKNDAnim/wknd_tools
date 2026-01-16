@@ -159,10 +159,7 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         for curve in curves:
             mc.keyframe(curve, e=1, r=1, timeChange=offset*(-1))
 
-        cameraInfo, finalMovement, movements = camera_info.get_camera_movement(shot_camera)
-
-        log("KEYS CLEANED!\n")
-        log(f"CAMERA INFO ---> {cameraInfo}")
+        log("KEYS CLEANED!\n")        
 
         ##################
         # EXPORT CAMERAS #
@@ -182,6 +179,10 @@ def split_scene_per_shot(context, engine, log, selectedShots):
             os.makedirs(os.path.dirname(camera_publish_path_abc))
 
         shot_camera_baked = _bake_camera(shot_camera, start_frame-offset, end_frame-offset)
+
+        # Get camera movement information
+        cameraInfo, finalMovement, movements = camera_info.get_camera_movement(shot_camera_baked)
+        log(f"CAMERA INFO ---> {cameraInfo}")
 
         cmd = '-root ' + shot_camera_baked + ' -frameRange ' + str(start_frame-offset) + ' ' + str(end_frame-offset) + ' -step 1 -attr focalLength -worldSpace -writeVisibility -dataFormat ogawa -file ' + camera_publish_path_abc
         mc.AbcExport(j=cmd)
@@ -280,7 +281,8 @@ def split_scene_per_shot(context, engine, log, selectedShots):
             "sg_cam_mov_range": str(finalMovement)
         }
 
-        if cameraInfo:
+        # if cameraInfo:
+        if finalMovement:
             shot_data["sg_cam_mov"] = True
 
         sg.update("Shot", shot_entity["id"], shot_data)
