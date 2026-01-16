@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.11] - 2026-01-15
+
+   - Publish version:
+      - Playblast tool:
+         - Add `Animation` to playblast with sound steps
+
+## [1.0.10] - 2026-01-15
+
+   - Improved Logging on Splitter
+
+## [1.0.9] - 2026-01-1X
+
+   ## Added
+      - Splitter:
+         - Que se importen los audios en cada plano al hacer el split y que se copien a la carpeta del Shot
+
+   ## Fixed
+      - Splitter:
+         - Change parent_safe() to avoid parenting
+      - Create Playblast:
+         - Corregido que al hacer playblast sin sonido que no de error
+
+## [1.0.8] - 2025-12-23
+
+   - Añadimos el UPDATER:
+      - Es como una mini copia del tk-multi-breakdown2 que mira las referencias de la escena y las actualiza a la versión aprobada o a la última versión
+
+## [1.0.7] - 2025-12-16
+
+   - Publisher:
+      - Added function to do Playblast with Sound for Layout Single Shots
+
+## [1.0.6] - 2025-12-16
+
+   - Layout Splitter: Added camera parenting to CAMERAS group, and delete ma camera ref for ANIM
+
+## [1.0.5] - 2025-12-15
+
+   - Layout Splitter: Reducimos el número de atributos de la shape de cámara que bakeamos para que tarde menos
+
+## [1.0.4] - 2025-12-11
+
+## [1.0.3] - 2025-12-03
+
+   ### Added
+   - Layout splitter
+   - Animation publisher script - NOT WORKING YET
+
 ## [1.0.2] - 2025-12-03
 
 - testing

@@ -5,7 +5,7 @@ import os
 import glob
 
 
-def capture_viewport_sequence(start_frame=None, end_frame=None, sequence_capture=False, width=1920, height=1080):
+def capture_viewport_sequence(start_frame=None, end_frame=None, sequence_capture=False, width=1280, height=720):
     """
     Capture viewport as image sequence
 
@@ -97,6 +97,43 @@ def capture_viewport_sequence(start_frame=None, end_frame=None, sequence_capture
             'format': 'png',
             'count': len(files)
         }
+
+
+def capture_playblast_with_sound(output_video, sound):
+
+    start_frame = mc.playbackOptions(query=True, minTime=True)
+    end_frame = mc.playbackOptions(query=True, maxTime=True)
+
+    # Save current state
+    original_time = mc.currentTime(query=True)
+
+    # Configure viewport
+    panel = _get_active_panel()
+    camera = mc.modelPanel(panel, q=True, camera=True)
+    _setup_clean_viewport(panel)
+
+    mc.playblast(
+        filename=output_video,
+        format='qt',
+        forceOverwrite=True,
+        clearCache=True,
+        viewer=True,
+        showOrnaments=False,
+        percent=100,
+        compression='H.264',
+        quality=100,
+        startTime=start_frame,
+        endTime=end_frame,
+        # camera=camera,
+        editorPanelName=panel,
+        widthHeight=[1280, 720],
+        sound=sound
+    )
+
+    # Restore
+    mc.currentTime(original_time)
+
+    return True
 
 
 def _get_active_panel():
