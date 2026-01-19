@@ -221,7 +221,8 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         _parent_safe(cam_transforms + [shot_camera_baked], "CAMERAS")
 
         # Load Audios
-        loaded_audios = _load_audio_clips(audio_clips, offset, tk, fields["Sequence"])
+        loaded_audios = _load_audio_clips(audio_clips, offset, tk, fields)
+        # loaded_audios = _load_audio_clips(audio_clips, offset, tk, fields["Sequence"])
         log(f"✅ Audios Loaded!🦻 --> {loaded_audios}")        
 
         # Set frame range in scene
@@ -498,23 +499,35 @@ def _get_audio_clips_for_shot(shot_start, shot_end):
     return audio_clips
 
 
-def _load_audio_clips(audio_clips, shot_offset, tk, seq):
+def _load_audio_clips(audio_clips, shot_offset, tk, fields):
     """
     Carga múltiples clips de audio en la escena, ajustados al offset del plano
     """
     loaded_audios = []
 
-    template_in = tk.templates["atic_shot_layout_audio"]
+    # template_in_shot = tk.templates["maya_shot_audio"]
+    # template_in_edit = tk.templates["atic_shot_layout_audio"]
     template_out = tk.templates["maya_shot_audio"]
 
     for clip in audio_clips:
 
-        fields_in = template_in.get_fields(clip['filepath'])
-        fields_in["Sequence"] = seq
-        audio_shot_path = template_out.apply_fields(fields_in)
+        # # Primero comprobamos si el audio ya está en su sitio
+        # try:
+
+        #     fields_in = template_in_shot.get_fields(clip['filepath'])
+        #     print(f"AUDIO is already on Shot context folder! - {clip['filepath']} -")
+        #     audio_shot_path = clip['filepath']
+
+        # except:
+
+        #     fields_in = template_in_edit.get_fields(clip['filepath'])
+        #     fields_in["Sequence"] = fields["Sequence"]
+        
+        audio_shot_path = template_out.apply_fields(fields)
 
         # Copiamos el audio a la carpeta editorial del shot
         shutil.copy2(clip['filepath'], audio_shot_path)
+        print(f"AUDIO copied from - {clip['filepath']} - to - {audio_shot_path} -")
 
         new_offset = (clip['original_offset'] - shot_offset)
 
