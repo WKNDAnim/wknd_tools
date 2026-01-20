@@ -81,7 +81,7 @@ def export_alembic(object_to_export, file_path, frameIn, frameOut):
     mc.loadPlugin('AbcExport.mll')
     mc.loadPlugin('AbcImport.mll')
 
-    abc_cmd = f'-root {root_str} -frameRange {str(frameIn)} {str(frameOut)} -noNormals -uvWrite -worldSpace -attrPrefix GUS -attrPrefix ai -attrPrefix lineWidth -dataFormat ogawa -writeVisibility -file "{file_path}"'
+    abc_cmd = f'-root {root_str} -frameRange {str(frameIn)} {str(frameOut)} -noNormals -uvWrite -writeUVSets -worldSpace -attrPrefix GUS -attrPrefix ai -attrPrefix lineWidth -dataFormat ogawa -writeVisibility -file "{file_path}"'
     mc.AbcExport(j=abc_cmd)
 
 
@@ -105,6 +105,7 @@ def export_ass(object_to_export, file_path):
     line = 'arnoldExportAss -f "' + file_path + '" -s -boundingBox -mask 24 -lightLinks 0 -shadowLinks 0 -fullPath -cam perspShape;'
     mm.eval(line)
     mc.select(cl=1)
+
 
 def export_shaders_and_textures_for_hair(asset_name, shaders_file_path, textures_export_folder):
 
