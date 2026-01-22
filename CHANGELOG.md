@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.15] - 2026-01-22
+
+   - Update de reconnect_shaders para que tenga en cuenta el nombre del asset al que pertenece el shader.
+   - Al cargar los audios al hacer split de layout, copiamos cada audio a editorial del shot manteniendo el nombre.
+   - Al hacer split, cambiamos la forma de buscar la cámara para eliminarla al ir de LAY a ANIM.
+
 ## [1.0.14] - 2026-01-20
 
    - Add `-writeUVSets` to Alembic exporter.
