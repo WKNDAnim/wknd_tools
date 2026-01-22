@@ -205,7 +205,9 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         mc.file(camera_publish_path_ma, r=True, ignoreVersion=True, namespace=shot_camera)
 
         # solo cámaras
-        cam_shapes = mc.ls(f"{shot_camera}:*", type="camera") or []
+        cams = mc.ls(type="camera")
+        cam_shapes = [cam for cam in cams if shot_camera in cam]
+        # cam_shapes = mc.ls(f"{shot_camera}:*", type="camera") or []
         log(f"CAMERA SHAPES -> {cam_shapes}")
 
         cam_transforms = []
@@ -353,47 +355,47 @@ def _bake_camera(main_camera, start_frame, end_frame):
         bakeOnOverrideLayer=False,
         minimizeRotation=True,
         controlPoints=False,
-        shape=False
+        shape=True
     )
 
-    # Bakear manualmente los atributos de la cámara frame por frame
-    # Primero recolectamos los valores mientras están conectados
-    baked_values = {}
-    for attr in camera_attrs:
-        source_attr = f"{main_camera_shape}.{attr}"
-        target_attr = f"{baked_camera_shape}.{attr}"
-        if mc.objExists(source_attr) and mc.objExists(target_attr):
-            baked_values[attr] = {}
-            for frame in range(int(start_frame), int(end_frame) + 1):
-                mc.currentTime(frame)
-                try:
-                    value = mc.getAttr(source_attr)
-                    baked_values[attr][frame] = value
-                except:
-                    pass
+    # # Bakear manualmente los atributos de la cámara frame por frame
+    # # Primero recolectamos los valores mientras están conectados
+    # baked_values = {}
+    # for attr in camera_attrs:
+    #     source_attr = f"{main_camera_shape}.{attr}"
+    #     target_attr = f"{baked_camera_shape}.{attr}"
+    #     if mc.objExists(source_attr) and mc.objExists(target_attr):
+    #         baked_values[attr] = {}
+    #         for frame in range(int(start_frame), int(end_frame) + 1):
+    #             mc.currentTime(frame)
+    #             try:
+    #                 value = mc.getAttr(source_attr)
+    #                 baked_values[attr][frame] = value
+    #             except:
+    #                 pass
 
-    # Desconectar todos los atributos conectados
-    for attr in camera_attrs:
-        target_attr = f"{baked_camera_shape}.{attr}"
-        connections = mc.listConnections(target_attr, source=True, destination=False, plugs=True)
-        if connections:
-            try:
-                mc.disconnectAttr(connections[0], target_attr)
-            except:
-                pass
+    # # Desconectar todos los atributos conectados
+    # for attr in camera_attrs:
+    #     target_attr = f"{baked_camera_shape}.{attr}"
+    #     connections = mc.listConnections(target_attr, source=True, destination=False, plugs=True)
+    #     if connections:
+    #         try:
+    #             mc.disconnectAttr(connections[0], target_attr)
+    #         except:
+    #             pass
 
-    # Ahora aplicar los keyframes con los valores guardados
-    for attr, frame_values in baked_values.items():
-        target_attr = f"{baked_camera_shape}.{attr}"
-        for frame, value in frame_values.items():
-            try:
-                mc.setKeyframe(target_attr, time=frame, value=value)
-            except:
-                pass
+    # # Ahora aplicar los keyframes con los valores guardados
+    # for attr, frame_values in baked_values.items():
+    #     target_attr = f"{baked_camera_shape}.{attr}"
+    #     for frame, value in frame_values.items():
+    #         try:
+    #             mc.setKeyframe(target_attr, time=frame, value=value)
+    #         except:
+    #             pass
 
     # Eliminar el constraint
     mc.delete(parent_constraint)
-        
+
     print(f"Cámara bakeada creada: {baked_camera_transform}")
     return baked_camera_transform
 
@@ -408,11 +410,11 @@ def _delete_all_in_group(groupName):
     else:
 
         # Buscamos dentro del grupo
-        cameras = mc.listRelatives(groupName, children=True, fullPath=True)
+        items = mc.listRelatives(groupName, children=True, fullPath=True)
 
-        if cameras:
+        if items:
 
-            for item in cameras:
+            for item in items:
 
                 _delete_something(item)
 
@@ -509,6 +511,10 @@ def _load_audio_clips(audio_clips, shot_offset, tk, fields):
     # template_in_edit = tk.templates["atic_shot_layout_audio"]
     template_out = tk.templates["maya_shot_audio"]
 
+    # Get root path
+    audio_shot_path = template_out.apply_fields(fields)
+    audio_shot_root = os.path.dirname(audio_shot_path)
+
     for clip in audio_clips:
 
         # # Primero comprobamos si el audio ya está en su sitio
@@ -522,8 +528,10 @@ def _load_audio_clips(audio_clips, shot_offset, tk, fields):
 
         #     fields_in = template_in_edit.get_fields(clip['filepath'])
         #     fields_in["Sequence"] = fields["Sequence"]
-        
-        audio_shot_path = template_out.apply_fields(fields)
+
+        # Formamos el path para cada clip
+        clip_name = os.path.basename(clip['filepath'])
+        audio_shot_path = os.path.join(audio_shot_root, clip_name)
 
         # Copiamos el audio a la carpeta editorial del shot
         shutil.copy2(clip['filepath'], audio_shot_path)

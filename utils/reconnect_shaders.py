@@ -1,5 +1,6 @@
 import maya.cmds as cmds
 
+
 def _reconnect_shaders():
     """ Recorremos todas las shapes de la escena y cargamos su shader"""
 
@@ -8,11 +9,12 @@ def _reconnect_shaders():
 
     for shape in shapes:
         try:
+            assetName = cmds.getAttr(shape + "." + "GUS_asset_name")
             try:
                 shaderName = cmds.getAttr(shape + "." + "GUS_shading_grp")
             except:
                 shaderName = cmds.getAttr(shape + "." + "GUS_relatedShader")
-            shaderEngine = [s for s in shaders if shaderName in s][0]
+            shaderEngine = [s for s in shaders if shaderName in s and assetName in s][0]
             cmds.sets(shape, e=True, forceElement=shaderEngine)
             print(f"'{shaderName}' connected to '{shape}'")
         except Exception as e:
