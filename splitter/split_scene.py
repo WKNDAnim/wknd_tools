@@ -165,7 +165,7 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         # EXPORT CAMERAS #
         ##################
 
-        log("Exporting cameras...")
+        log("INFO --> Exporting cameras...")
 
         # MAYA SCENE
         if not os.path.exists(os.path.dirname(camera_publish_path_ma)):
@@ -193,7 +193,7 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         # EXPORT LAYOUT #
         #################
 
-        log("Exporting Layout...")
+        log("INFO --> Exporting Layout...")
 
         # Delete shots from sequencer
         mc.delete(shots)
@@ -223,6 +223,7 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         _parent_safe(cam_transforms + [shot_camera_baked], "CAMERAS")
 
         # Load Audios
+        log("INFO --> Loading audios...")
         loaded_audios = _load_audio_clips(audio_clips, offset, tk, fields)
         log(f"✅ Audios Loaded!🦻 --> {loaded_audios}")        
 
@@ -260,11 +261,13 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         # EXPORT ANIMATION #
         ####################
 
+        log("INFO --> Exporting Animation...")
+
         # Remove ma camera and import alembic camera
         _delete_something(cam_transforms[0])
-        log("MA camera deleted!")
+        log("- MA camera deleted!")
         mc.file(camera_publish_path_abc, r=True, ignoreVersion=True, namespace=shot_camera)
-        log("ABC camera imported!")
+        log("- ABC camera imported!")
 
         # if camera is static camera, lock attributes
         try:
@@ -348,7 +351,7 @@ def _bake_camera(main_camera, start_frame, end_frame):
     ]
 
     for attr in camera_attrs:
-            
+
             source_attr = f"{main_camera_shape}.{attr}"
             target_attr = f"{baked_camera_shape}.{attr}"
 
