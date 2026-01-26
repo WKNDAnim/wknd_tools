@@ -92,8 +92,8 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         tk.create_filesystem_structure("Task", task["id"])
 
         # Build path for LAYOUT
-        shot_context = tk.context_from_entity('Task', task['id'])
-        fields = shot_context.as_template_fields(template)
+        shot_context_lay = tk.context_from_entity('Task', task['id'])
+        fields = shot_context_lay.as_template_fields(template)
         fields["name"] = fields_work["name"]
         fields["version"] = current_version
         layout_scene_path = template.apply_fields(fields)
@@ -125,8 +125,8 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         tk.create_filesystem_structure("Task", task["id"])
 
         # Build path for ANIMATION
-        shot_context = tk.context_from_entity('Task', task['id'])
-        fields = shot_context.as_template_fields(template)
+        shot_context_anim = tk.context_from_entity('Task', task['id'])
+        fields = shot_context_anim.as_template_fields(template)
         # fields["Task"] = 'Animation'
         fields["name"] = fields_work["name"]
         fields["version"] = 1  # For animation, restart versioning
@@ -249,7 +249,7 @@ def split_scene_per_shot(context, engine, log, selectedShots):
 
         description = "Layout Shot Splitted Version"
 
-        publisher = publish_version.Publisher(shot_context, current_version, description, use_playblast=True, log_callback=log)
+        publisher = publish_version.Publisher(shot_context_lay, current_version, description, use_playblast=True, log_callback=log)
         publish_result = publisher.publish()
 
         log("-"*50)
