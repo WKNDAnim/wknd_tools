@@ -109,29 +109,58 @@ def capture_playblast_with_sound(output_video, sound):
 
     # Configure viewport
     panel = _get_active_panel()
-    camera = mc.modelPanel(panel, q=True, camera=True)
+    # camera = mc.modelPanel(panel, q=True, camera=True)
     _setup_clean_viewport(panel)
 
-    mc.playblast(
-        filename=output_video,
-        format='qt',
-        forceOverwrite=True,
-        clearCache=True,
-        viewer=True,
-        showOrnaments=False,
-        percent=100,
-        compression='H.264',
-        quality=100,
-        startTime=start_frame,
-        endTime=end_frame,
-        # camera=camera,
-        editorPanelName=panel,
-        widthHeight=[1280, 720],
-        sound=sound
-    )
+    if sound == "trax":
+
+        print("INFO --> Using Trax Sound for playblast")
+
+        mc.playblast(
+            filename=output_video,
+            format='qt',
+            forceOverwrite=True,
+            clearCache=True,
+            viewer=False,
+            showOrnaments=False,
+            percent=100,
+            compression='H.264',
+            quality=100,
+            startTime=start_frame,
+            endTime=end_frame,
+            # camera=camera,
+            editorPanelName=panel,
+            widthHeight=[1280, 720],
+            useTraxSounds=True
+        )
+
+    else:
+
+        print("INFO --> Using Trax Sound for playblast")
+
+        mc.playblast(
+            filename=output_video,
+            format='qt',
+            forceOverwrite=True,
+            clearCache=True,
+            viewer=False,
+            showOrnaments=False,
+            percent=100,
+            compression='H.264',
+            quality=100,
+            startTime=start_frame,
+            endTime=end_frame,
+            # camera=camera,
+            editorPanelName=panel,
+            widthHeight=[1280, 720],
+            sound=sound
+        )
+    print("Playblast donee -----------")
 
     # Restore
     mc.currentTime(original_time)
+
+    print("TIME RESTORED -----------")
 
     return True
 
