@@ -210,8 +210,13 @@ class Publisher:
                     # Obtenemos el sonido del timeline
                     sound_node = mc.timeControl(gPlayBackSlider, q=True, sound=True)
 
+                    if not sound_node:
+                        sound_node = "trax"
+
                     # If we are in a single Shot, publish regular playblast
-                    output_video = playblast_tool.create_playblast(self.version_movie_path, sound=sound_node)
+                    self.log(f"SOUND NODE -----------> {sound_node}")
+                    output_video = playblast_tool.create_playblast(self.version_movie_path, sound=sound_node, log=self.log)
+                    self.log(f" --------------------------------------- {output_video}")
 
             else:
 
@@ -460,3 +465,37 @@ class Publisher:
         )
 
         return publish
+
+    def _get_audio_clips_for_shot(self, shot_start, shot_end):
+        """
+        Encuentra todos los clips de audio que se solapan con el rango del plano
+        """
+        audio_clips = []
+
+        # Obtener todos los audio nodes en la escena
+        audio_nodes = mc.ls(type='audio')
+
+        for audio in audio_nodes:
+            # Obtener offset y duración del audio
+            offset = mc.getAttr(f'{audio}.offset')
+            source_start = mc.getAttr(f'{audio}.sourceStart')
+            source_end = mc.getAttr(f'{audio}.sourceEnd')
+
+            audio_start = offset
+            audio_end = offset + (source_end - source_start)
+
+            # Verificar si hay overlap
+            if audio_start < shot_end and audio_end > shot_start:
+                # Calcular el segmento exacto que necesitamos
+                clip_info = {
+                    'node': audio,
+                    'filepath': mc.getAttr(f'{audio}.filename'),
+                    'original_offset': offset,
+                    'source_start': source_start,
+                    'source_end': source_end,
+                    'clip_start': max(audio_start, shot_start),
+                    'clip_end': min(audio_end, shot_end)
+                }
+                audio_clips.append(clip_info)
+
+        return audio_clips

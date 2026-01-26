@@ -317,8 +317,8 @@ class AnimationPublisherUI(MayaQWidgetDockableMixin, qt.QDialog):
 
         # Aquí irá la lógica de export de alembic
         qt.QMessageBox.information(
-            self, 
-            "Publish", 
+            self,
+            "Publish",
             f"Se publicarán {len(selected_assets)} assets.\n(Ver consola para detalles)"
         )
 
@@ -333,8 +333,3 @@ def showUI():
         pass
     animation_publisher_ui = AnimationPublisherUI()
     animation_publisher_ui.show(dockable=True)
-
-
-# # Para ejecutar desde Maya:
-# if __name__ == "__main__":
-#     showUI()

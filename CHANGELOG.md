@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.16] - 2026-01-26
+
+   - UPDATER:
+      - Now able to update Rigs and Cameras right
+
+   - SPLITTER:
+      - Hace Playblast de cada plano y lo guarda en LAY/publish/movies. Crea una versión en SG.
+      - Eliminamos el grupo PREVIS de 
+
+
 ## [1.0.15] - 2026-01-22
 
    - Update de reconnect_shaders para que tenga en cuenta el nombre del asset al que pertenece el shader.
