@@ -18,19 +18,15 @@ def create_playblast(output_video, sound=None, log=None):
         str: Path to video or None
     """
 
-    log("CREATING PLAYBLAST ------------------------------")
+    log("CREATING PLAYBLAST... ------------------------------")
     # Create folder if needed
     if not os.path.exists(os.path.dirname(output_video)):
         os.makedirs(os.path.dirname(output_video))
 
     # If we use sound
     if sound:
-        log("SIII SOUND... ------------------------------")
         success = capture.capture_playblast_with_sound(output_video, sound)
-        log(f"SUCCESS -----------> {success}")
     else:
-
-        log("NO SOUND... ------------------------------")
         # capture viewport
         capture_info = capture.capture_viewport_sequence()
 

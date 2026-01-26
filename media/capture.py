@@ -107,9 +107,13 @@ def capture_playblast_with_sound(output_video, sound):
     # Save current state
     original_time = mc.currentTime(query=True)
 
-    # Configure viewport
+    # Get active panel or the one with the camera we want
     panel = _get_active_panel()
-    # camera = mc.modelPanel(panel, q=True, camera=True)
+    camera = mc.modelPanel(panel, q=True, camera=True)
+    if not "sq" in camera:
+        panel = get_valid_model_panel()
+
+    # Configure viewport
     _setup_clean_viewport(panel)
 
     if sound == "trax":
@@ -171,6 +175,23 @@ def _get_active_panel():
     if 'modelPanel' not in panel:
         panel = mc.getPanel(type='modelPanel')[0]
     return panel
+
+
+def is_default_camera(cam):
+    shape = cam
+    if mc.nodeType(cam) == "transform":
+        shapes = mc.listRelatives(cam, s=True, type="camera") or []
+        shape = shapes[0] if shapes else None
+    return shape and mc.camera(shape, q=True, startupCamera=True)
+
+
+def get_valid_model_panel():
+    for p in mc.getPanel(type="modelPanel"):
+        cam = mc.modelPanel(p, q=True, camera=True)
+        print(f"{p} --> {cam}")
+        if not is_default_camera(cam):
+            return p
+    return None
 
 
 def _setup_clean_viewport(panel):

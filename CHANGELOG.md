@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.18] - 2026-01-27
+## [1.0.18] - 2026-01-26
+
+   - SPLITTER:
+      - Añadimos dos funciones al script "capture" que seleccionan el panel editor con la cámara del Shot para que el playblast salga bien.
+
+## [1.0.18] - 2026-01-26
 
    - RECAP AND FIX VERSION ----------------
 
