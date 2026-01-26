@@ -192,8 +192,7 @@ class Publisher:
         # Playblast
         if self.use_playblast:
 
-            self.log("Capturing playblast ---------------\n")
-            self.log(self.version_movie_path)
+            self.log(f"INFO ---> Capturing playblast: {self.version_movie_path} \n")
 
             if self.context.step['name'] in ['Layout', 'Animation']:
 
@@ -214,15 +213,11 @@ class Publisher:
                         sound_node = "trax"
 
                     # If we are in a single Shot, publish regular playblast
-                    self.log(f"SOUND NODE -----------> {sound_node}")
                     output_video = playblast_tool.create_playblast(self.version_movie_path, sound=sound_node, log=self.log)
-                    self.log(f" --------------------------------------- {output_video}")
 
             else:
 
                 output_video = playblast_tool.create_playblast(self.version_movie_path) # in every other case, we just need a playblast from the shot, plabackOptions define frame range
-
-            self.log(f"OUTPUT_VIDEO - {os.path.exists(output_video)} --> {output_video}\n")
 
             if output_video:
 
