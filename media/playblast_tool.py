@@ -10,21 +10,27 @@ import os
 import shutil
 
 
-def create_playblast(output_video, sound=None):
+def create_playblast(output_video, sound=None, log=None):
     """
     Create playblast video from current camera
 
     Returns:
         str: Path to video or None
     """
+
+    log("CREATING PLAYBLAST ------------------------------")
     # Create folder if needed
     if not os.path.exists(os.path.dirname(output_video)):
         os.makedirs(os.path.dirname(output_video))
 
     # If we use sound
     if sound:
+        log("SIII SOUND... ------------------------------")
         success = capture.capture_playblast_with_sound(output_video, sound)
+        log(f"SUCCESS -----------> {success}")
     else:
+
+        log("NO SOUND... ------------------------------")
         # capture viewport
         capture_info = capture.capture_viewport_sequence()
 
@@ -104,6 +110,7 @@ def create_sequence_playblast(output_video):
     capture.cleanup_capture_files(capture_info)
 
     return output_video if success else None
+
 
 def _copy_to_movies(capture_info, output_video):
 

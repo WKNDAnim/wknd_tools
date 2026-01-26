@@ -224,7 +224,6 @@ def split_scene_per_shot(context, engine, log, selectedShots):
 
         # Load Audios
         loaded_audios = _load_audio_clips(audio_clips, offset, tk, fields)
-        # loaded_audios = _load_audio_clips(audio_clips, offset, tk, fields["Sequence"])
         log(f"✅ Audios Loaded!🦻 --> {loaded_audios}")        
 
         # Set frame range in scene
@@ -239,6 +238,23 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         mc.file(save=True, type='mayaAscii')
 
         log(f"✅ LAYOUT scene exported! --> {layout_scene_path}")
+
+        ##################
+        # PLAYBLAST SHOT #
+        ##################
+
+        from wknd_tools.core import publish_version
+        import importlib
+        importlib.reload(publish_version)
+
+        description = "Layout Shot Splitted Version"
+
+        publisher = publish_version.Publisher(shot_context, current_version, description, use_playblast=True, log_callback=log)
+        publish_result = publisher.publish()
+
+        log("-"*50)
+        log(f" PUBLISH RESULT --> {publish_result}")
+        log("-"*50)
 
         ####################
         # EXPORT ANIMATION #
@@ -265,6 +281,9 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         # Create folder
         if not os.path.exists(os.path.dirname(anim_scene_path)):
             os.makedirs(os.path.dirname(anim_scene_path))
+
+        # Delete PREVIS group
+        _delete_all_in_group("PREVIS")
 
         # rename and save as animation scene
         mc.file(rename=anim_scene_path)
@@ -329,6 +348,7 @@ def _bake_camera(main_camera, start_frame, end_frame):
     ]
 
     for attr in camera_attrs:
+            
             source_attr = f"{main_camera_shape}.{attr}"
             target_attr = f"{baked_camera_shape}.{attr}"
 
@@ -357,41 +377,6 @@ def _bake_camera(main_camera, start_frame, end_frame):
         controlPoints=False,
         shape=True
     )
-
-    # # Bakear manualmente los atributos de la cámara frame por frame
-    # # Primero recolectamos los valores mientras están conectados
-    # baked_values = {}
-    # for attr in camera_attrs:
-    #     source_attr = f"{main_camera_shape}.{attr}"
-    #     target_attr = f"{baked_camera_shape}.{attr}"
-    #     if mc.objExists(source_attr) and mc.objExists(target_attr):
-    #         baked_values[attr] = {}
-    #         for frame in range(int(start_frame), int(end_frame) + 1):
-    #             mc.currentTime(frame)
-    #             try:
-    #                 value = mc.getAttr(source_attr)
-    #                 baked_values[attr][frame] = value
-    #             except:
-    #                 pass
-
-    # # Desconectar todos los atributos conectados
-    # for attr in camera_attrs:
-    #     target_attr = f"{baked_camera_shape}.{attr}"
-    #     connections = mc.listConnections(target_attr, source=True, destination=False, plugs=True)
-    #     if connections:
-    #         try:
-    #             mc.disconnectAttr(connections[0], target_attr)
-    #         except:
-    #             pass
-
-    # # Ahora aplicar los keyframes con los valores guardados
-    # for attr, frame_values in baked_values.items():
-    #     target_attr = f"{baked_camera_shape}.{attr}"
-    #     for frame, value in frame_values.items():
-    #         try:
-    #             mc.setKeyframe(target_attr, time=frame, value=value)
-    #         except:
-    #             pass
 
     # Eliminar el constraint
     mc.delete(parent_constraint)
@@ -516,18 +501,6 @@ def _load_audio_clips(audio_clips, shot_offset, tk, fields):
     audio_shot_root = os.path.dirname(audio_shot_path)
 
     for clip in audio_clips:
-
-        # # Primero comprobamos si el audio ya está en su sitio
-        # try:
-
-        #     fields_in = template_in_shot.get_fields(clip['filepath'])
-        #     print(f"AUDIO is already on Shot context folder! - {clip['filepath']} -")
-        #     audio_shot_path = clip['filepath']
-
-        # except:
-
-        #     fields_in = template_in_edit.get_fields(clip['filepath'])
-        #     fields_in["Sequence"] = fields["Sequence"]
 
         # Formamos el path para cada clip
         clip_name = os.path.basename(clip['filepath'])

@@ -97,6 +97,8 @@ class BreakdownTool:
                 entity_info['type'] = 'Shot'
                 entity_info['code'] = fields.get('Shot')
             else:
+                print("ERROR: Entity is not an Asset or a Shot...")
+                return False
                 entity_info['type'] = fields.get('sg_asset_type', 'Unknown')
                 entity_info['code'] = 'Unknown'
 
@@ -111,7 +113,7 @@ class BreakdownTool:
             elif "shader" in template.name:
                 entity_info["publishedFileType"] = "Maya Shaders"
             else:
-                entity_info["publishedFileType"] = "Unknown"
+                entity_info["publishedFileType"] = "Maya Scene"
 
             return entity_info
 
@@ -205,6 +207,7 @@ class BreakdownTool:
         print(f"Referencias encontradas: {len(refs)}\n")
 
         for ref in refs:
+
             print(f"Analizando: {ref['node']}")
 
             # Obtiene info de la entity desde el path
@@ -220,9 +223,9 @@ class BreakdownTool:
                 })
                 continue
 
-            if entity_info['fields']['sg_asset_type'] not in ["ELEM", "PRP"]:
-                print(f"  ⚠ Skipping '{entity_info['code']}'...")
-                continue
+            # if entity_info['fields']['sg_asset_type'] not in ["ELEM", "PRP"]:
+            #     print(f"  ⚠ Skipping '{entity_info['code']}'...")
+            #     continue
 
             print(f"  Reference: {entity_info.get('code')}")
             print(f"  Entity: {entity_info.get('type')} - {entity_info.get('code')}")
@@ -268,7 +271,7 @@ class BreakdownTool:
                     print(f"  ✓ Actualizado")
             else:
                 status = 'no_publishes'
-                print(f"  ⚠ No se encontraron published files for {entity_info.get('code')} ({entity_info['fields']['sg_asset_type']})")
+                print(f"  ⚠ No se encontraron published files for '{entity_info.get('code')}' ")
                 continue
 
             results.append({
