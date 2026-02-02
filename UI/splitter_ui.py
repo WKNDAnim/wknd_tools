@@ -253,6 +253,7 @@ class SplitterUI(MayaQWidgetDockableMixin, qt.QWidget):
 
     def log(self, message):
         """Añade mensaje al log."""
+
         print(message)
         self.log_text.append(message)
         # Auto-scroll to bottom
