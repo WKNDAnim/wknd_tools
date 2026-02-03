@@ -238,12 +238,8 @@ class AnimPubUI(MayaQWidgetDockableMixin, qt.QWidget):
         """Añade mensaje al log."""
 
         print(message)
-        # self.log_text.append(message)
-        # Auto-scroll to bottom
-        # scrollbar = self.log_text.verticalScrollBar()
-        # scrollbar.setValue(scrollbar.maximum())    
-        # Force UI Update
-        # qt.QApplication.processEvents()
+        self._set_status(True, message)
+        qt.QApplication.processEvents()
 
     def publish(self):
         """Ejecuta el publish según el contexto."""
@@ -254,9 +250,26 @@ class AnimPubUI(MayaQWidgetDockableMixin, qt.QWidget):
 
         # Deshabilitar botón durante publish
         self.publish_btn.setEnabled(False)
+        self.publish_btn.setText("Starting publish...")
+        self.log("PUBLISHING...")
+        # self._set_status(True, "PUBLISHING...")
+        # qt.QApplication.processEvents()
+
+        # First, check if last versions of CHAR Rigs are being used
+        self.publish_btn.setText("Checking Rig version...")
+        warnings = self._check_rigs()
+        if warnings:
+            warn = "You are using old versions of some Rigs, please update it:\n"
+            for w in warnings:
+                warn = warn + f"\t- {w}.\n"
+
+            mc.confirmDialog(title='WARNING!', message=warn, button=['Okay'])
+
+            self.publish_btn.setText("Please update CHAR Rigs before continue...")
+            self._set_status(False, "ERROR: UPDATE RIGS")
+            return
+
         self.publish_btn.setText("PUBLISHING...")
-        self._set_status(True, "PUBLISHING...")
-        qt.QApplication.processEvents()
 
         # Store a backup of the main file
         backup_file_path = _backup_current_scene_temp(self.scene_path)
@@ -332,6 +345,41 @@ class AnimPubUI(MayaQWidgetDockableMixin, qt.QWidget):
         else:
             self.status_lbl.setStyleSheet("QLabel { color: #e74c3c; }")
 
+    def _check_rigs(self):
+        "Check if the referenced rig is the last version"
+        to_update = []
+
+        for asset in self.get_selected():
+            if asset["group"] == "CHAR":
+                is_last, msg = self._is_last_version(asset["ref_node"], "maya_asset_publish")
+                if not is_last:
+                    to_update.append(msg)
+
+        return to_update
+
+    def _is_last_version(self, ref_node, template_name):
+
+        # Get fields from path
+        ref_path = mc.referenceQuery(ref_node, filename=True, wcn=True)
+        template = self.tk.templates[template_name]
+        fields = template.get_fields(ref_path)
+
+        # Look for last version
+        fields_no_version = fields.copy()
+        fields_no_version.pop("version")
+        paths = self.tk.paths_from_template(template, fields_no_version)
+        paths.sort(reverse=True)
+
+        # Compare versions
+        fields_last = template.get_fields(paths[0])
+
+        if fields["version"] != fields_last["version"]:
+            msg = f"There is a newer version of - {fields['Asset']}_{fields['name']} ({fields['Task']})-, please update it to version {fields_last['version']}"
+            return False, msg
+
+        msg = f" Using right version for - {fields['Asset']}_{fields['name']} ({fields['Task']})- version({fields_last['version']})"
+        return True, msg
+
 
 def showUI():
     """Muestra la ventana de publish."""
@@ -400,13 +448,16 @@ def get_characters_and_props():
                     namespace = ''
                     name = child
 
-                name, number = _get_instance_number(namespace)
+                ref_node = mc.referenceQuery(child, referenceNode=True)
+                name, variant, number = _get_instance_number(namespace)
 
                 results['characters'].append({
                     'name': name,
                     'namespace': namespace,
                     'full_name': child,
+                    'variant': variant,
                     'instance_num': number,
+                    'ref_node': ref_node,
                     'group': 'CHAR'
                 })
                 print(f"  ✓ {child} - ANIMADO")
@@ -430,13 +481,16 @@ def get_characters_and_props():
                     namespace = ''
                     name = child
 
-                name, number = _get_instance_number(namespace)
+                ref_node = mc.referenceQuery(child, referenceNode=True)
+                name, variant, number = _get_instance_number(namespace)
 
                 results['props'].append({
                     'name': name,
                     'namespace': namespace,
                     'full_name': child,
+                    'variant': variant,
                     'instance_num': number,
+                    'ref_node': ref_node,
                     'group': 'PROPS'
                 })
                 print(f"  ✓ {child} - ANIMADO")
@@ -471,7 +525,7 @@ def _backup_current_scene_temp(scene_path):
 
 
 def _get_instance_number(name):
-    "Dado un string del tipo 'cono_scene1' devuelve el int que acompaña al string (1)"
+    "Dado un string del tipo 'cono_scene1' devuelve (cono, scene, 1)"
 
     pattern = re.compile(r"^(.*?)(\d+)?$")
 
@@ -480,6 +534,7 @@ def _get_instance_number(name):
         return f"ERROR: Pattern do not match with name '{name}'..."
 
     root, number = match.groups()
+    name, variant = root.split("_")
     number = int(number) if number else None
 
-    return root, number
+    return name, variant, number

@@ -1,5 +1,6 @@
 import maya.cmds as mc
 import maya.OpenMayaUI as omui
+import sgtk
 import os
 import re
 import shutil
@@ -12,18 +13,12 @@ def publish_animation(context, engine, log, selected_assets):
     tk = engine.sgtk
     sg = engine.shotgun
 
-    # log_text.clear()
-    log("=" * 60)
-    log("STARTING SPLIT")
-    log("=" * 60)
+    print("=" * 60)
+    print("STARTING ANIM PUBLISH")
+    print("=" * 60)
 
     scene_path = mc.file(q=True, sn=True)
-
-    # # Store a backup of the main file
-    # backup_file_path = _backup_current_scene_temp(scene_path)
-
-    # log(f"SCENE backupped to: {backup_file_path}")
-
+    log(f"Publishing: {scene_path}")
     #################
     # Get templates #
     #################
@@ -41,16 +36,17 @@ def publish_animation(context, engine, log, selected_assets):
     # Get fields from file
     scene_fields = scene_work_template.get_fields(scene_path)
 
-    log(f"- SCENE FIELDS FROM TEMPLATE:\n {scene_fields}")
+    print(f"- SCENE FIELDS FROM TEMPLATE:\n {scene_fields}")
 
     # Get Shot info from SG
-    query = ["sg_cut_in", 
-             "sg_cut_out"]
+    query = ["sg_cut_in", "sg_cut_out"]
     shot_info_sg = sg.find_one("Shot", [["code", "is", scene_fields["Shot"]]], query)
 
     ###################
     # GET FRAME RANGE #
     ###################
+
+    log("Getting Frame Range")
 
     # From Playback
     frame_in = int(mc.playbackOptions(q=1, min=1)) - 1
@@ -71,64 +67,87 @@ def publish_animation(context, engine, log, selected_assets):
     # LOOP ASSETS #
     ###############
 
+    log("Processing Assets...")
+
+    # Define templates
+    template_asset_by_shot_root = tk.templates["maya_shot_anim_assets_abc_publish_root"]
     template_asset_by_shot = tk.templates["maya_shot_anim_assets_abc_publish"]
-    errorRig = []
+    template_asset_hair_by_shot = tk.templates["maya_shot_anim_assets_abc_hair_publish"]
+
+    # Creamos la carpeta root si no existe
+    publish_root = template_asset_by_shot_root.apply_fields(scene_fields)
+    if not os.path.exists(publish_root):
+        os.makedirs(publish_root)
+
+    # errorRig = []
 
     for asset in selected_assets:
 
-        log(f"-Exporting {asset}")
+        log(f"Processing --> {asset}")
 
         ns = f"[{asset['namespace']}]" if asset['namespace'] else ""
         print(f"  • {asset['group']}: {asset['name']} {ns} (full: {asset['full_name']})")
 
-        scene_fields['Asset'] = format_namespace(asset['namespace'])
+        scene_fields['Asset'] = asset['name']
+        scene_fields['variante'] = asset['variant']
 
-        # # Miramos si es una instancia
-        # if asset['instance_num']:
-        #     scene_fields['copyNum'] = asset['instance_num']
+        # Miramos si es una instancia
+        if asset['instance_num']:
+            scene_fields['copyNum'] = asset['instance_num']
 
         # Formamos el path de export
-        ma_path = template_asset_by_shot.apply_fields(scene_fields)
+        abc_path = template_asset_by_shot.apply_fields(scene_fields)
 
         geo_to_export = (asset['namespace'] + ':geo')
-        log(f"\t- GEO: {geo_to_export} --> {ma_path}")
+        print(f"\t- GEO: {geo_to_export} --> {abc_path}")
 
         # Si es un character añadimos la geo que tiene el hair
         if asset["group"] == "CHAR":
 
-            log(f"\t- Is a CHAR!:")
+            log(f"Switching rig to hair for -{asset['name']}-")
 
-            success = switch_to_hair_rig(geo_to_export, log)
+            success = switch_to_hair_rig(geo_to_export)
 
             if success:
 
-                template_asset_hair_by_shot = tk.templates["maya_shot_anim_assets_abc_hair_publish"]
-                ma_path_hair = template_asset_hair_by_shot.apply_fields(scene_fields)
+                abc_path_hair = template_asset_hair_by_shot.apply_fields(scene_fields)
 
                 geo_to_export_hair = geo_to_export.split(":")[0] + ":hair"
 
-                log(f"\t\t- GEO (HAIR): {geo_to_export_hair} --> {ma_path_hair}")
+                print(f"\t\t- GEO (HAIR): {geo_to_export_hair} --> {abc_path_hair}")
 
                 # Exportamos la geo del hair
-                exporters.export_alembic(geo_to_export_hair, ma_path_hair, frame_in, frame_out)
+                exporters.export_alembic(geo_to_export_hair, abc_path_hair, frame_in, frame_out)
 
-                log("\t 👍 Hair abc exported!")
+                print("\t 👍 Hair abc exported!")
 
             else:
 
-                errorRig.append(asset["name"])
-                log(f"\t ❌ ERROR: Cannot switch -{asset['name']}- Rig to hair...!")
+                # errorRig.append(asset["name"])
+                return False, f"\t ❌ ERROR: Cannot switch -{asset['name']}- Rig to hair...!"
 
         # Exportamos la geo
-        exporters.export_alembic(geo_to_export, ma_path, frame_in, frame_out)
+        exporters.export_alembic(geo_to_export, abc_path, frame_in, frame_out)
         log("👍 Geo abc exported!")
 
-    log("="*60)
-    log(f"Total: {len(selected_assets)} assets\n")
-    if errorRig:
-        log(f"ERROR changing Rig for: {errorRig}")
+    print("="*60)
+    log(f"Total: {len(selected_assets)} assets exported! Publishing to SG...\n")
 
-    return True, "✅ DONE :)"
+    # if errorRig:
+    #     log(f"ERROR changing Rig for: {errorRig}")
+
+    # Register publish on SG
+    publish = sgtk.util.register_publish(
+        tk,
+        context,
+        publish_root,           # <- puede ser carpeta también
+        f"{scene_fields['Shot']}_caches",
+        scene_fields["version"],
+        published_file_type="Anim Cache Folder",  # o el type que tengáis
+        comment="Publish de las caches de ANIM",
+    )
+
+    return True, "✅ DONE :) You can now close this window!"
 
 #############################################################
 
@@ -181,33 +200,33 @@ def get_hair_rig_from_character(asset_geo_node):
         return None
 
 
-def switch_to_hair_rig(asset_geo_node, log):
+def switch_to_hair_rig(asset_geo_node):
 
     hair_rig_dict = {}
 
-    log("\t\t\t- Switching to hair Rig...")
+    print("\t\t\t- Switching to hair Rig...")
 
     hair_rig_dict['hair_rig_path'] = get_hair_rig_from_character(asset_geo_node)
 
-    log(f"\t\t\t- HAIR RIG PATH: {hair_rig_dict['hair_rig_path']}")
+    print(f"\t\t\t- HAIR RIG PATH: {hair_rig_dict['hair_rig_path']}")
 
     if not hair_rig_dict['hair_rig_path']:
-        return
+        return False
 
     mesh = mc.listRelatives(asset_geo_node, ad=1)[0]
     hair_rig_dict['reference_node'] = mc.referenceQuery(mesh, referenceNode=True)
 
-    log(f"\t\t\t- REF NODE: {hair_rig_dict['reference_node']}")
+    print(f"\t\t\t- REF NODE: {hair_rig_dict['reference_node']}")
 
     # Get current rig
     hair_rig_dict['current_path'] = mc.referenceQuery(hair_rig_dict['reference_node'], filename=True)
 
-    log(f"\t\t\t- CURRENT PATH: {hair_rig_dict['current_path']}")
+    print(f"\t\t\t- CURRENT PATH: {hair_rig_dict['current_path']}")
 
     # Replace actual rig for hair rig
     mc.file(hair_rig_dict['hair_rig_path'], loadReference=hair_rig_dict['reference_node'])
 
-    log("\t\t\t- Done! :)")
+    print("\t\t\t- Done! :)")
 
     return hair_rig_dict
 
