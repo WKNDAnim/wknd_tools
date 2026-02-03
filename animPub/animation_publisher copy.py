@@ -1,7 +1,6 @@
 import maya.cmds as cmds
 import maya.OpenMayaUI as omui
 import sgtk
-import maya.cmds as cmds
 import maya.cmds as mc
 from ..core import exporters
 
@@ -252,8 +251,24 @@ class AnimationPublisherUI(MayaQWidgetDockableMixin, qt.QDialog):
         for cb in self.checkboxes:
             cb.setChecked(False)
 
+    def get_selected(self):
+
+        selected_assets = []
+
+        for cb in self.checkboxes:
+            if cb.isChecked():
+                selected_assets.append(cb.asset_data)
+
+        if not selected_assets:
+            print("\n⚠ No hay assets seleccionados para publicar")
+            qt.QMessageBox.warning(self, "Advertencia", "No hay assets seleccionados para publicar")
+            return
+
+        return selected_assets
+
     def publish(self):
         """Publica los assets seleccionados (por ahora solo printea)."""
+
         selected_assets = []
 
         for cb in self.checkboxes:
