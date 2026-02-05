@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-02-05
+
+   - SPLITTER:
+      - Fix: Se quedaban todos los audios en el Trax de las escenas de LAY y ANIM. Los eliminamos y los volvemos a cargar dependiendo de si se necesitan
+
 ## [1.1.1] - 2026-02-02
 
    - ANIMATION PUBLISHER:

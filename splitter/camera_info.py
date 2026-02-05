@@ -121,16 +121,16 @@ def _define_camera_changes(cameraInfo, keyedFrames):
             y_f = [keyFrameValues['focusDistance']]
             focus = _dist(x_f, y_f)
 
-            if traslacion:
-                print(f"Hay TRASLACION del frame {prevFrame} al {frame}")
+            # if traslacion:
+                # print(f"Hay TRASLACION del frame {prevFrame} al {frame}")
             t = traslacion or t
 
-            if rotacion:
-                print(f"Hay ROTACION del frame {prevFrame} al {frame}")
+            # if rotacion:
+                # print(f"Hay ROTACION del frame {prevFrame} al {frame}")
             r = rotacion or r
 
-            if zoom:
-                print(f"Hay ZOOM del frame {prevFrame} al {frame}")
+            # if zoom:
+                # print(f"Hay ZOOM del frame {prevFrame} al {frame}")
             z = zoom or z
 
             # if focus:
@@ -200,6 +200,7 @@ def get_camera_movement(camera):
 
     """
 
+    print("AQUIIIIIIIIIIIIIIIII")
     # Obtener keyframes en el formato solicitado
     cameraInfo, keyedFrames = _get_camera_keyframes_by_frame(camera)
 
