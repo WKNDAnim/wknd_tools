@@ -20,20 +20,20 @@ def split_scene_per_shot(context, engine, log, selectedShots):
     # Get work template
     template = tk.templates["maya_shot_work"]
 
-    # get current version fields
+    # Get current version fields
     current_file = mc.file(query=True, sceneName=True)
     log(f"📝 Current File: {current_file}")
     fields_work = template.get_fields(current_file)
     current_version = fields_work["version"]
     log(f"🧺 Fields WORK: {fields_work}")
 
-    # get shots from sequencer
+    # Get shots from sequencer
     seq_manager = mc.sequenceManager(q=True, node=True)
     sequencer = mc.listConnections(seq_manager, type='sequencer')[0]
     shots = mc.listConnections(sequencer, type="shot") or []  # Get a list of all shots from the sequencer.
     log(f"🤸‍♀️ Shots from sequencer: {shots}")
 
-    # get all shot cameras to delete them later
+    # Get all shot cameras to delete them later
     all_cameras = list()
     for shot in shots:
         all_cameras.append(mc.listConnections(f"{shot}.currentCamera")[0])
@@ -46,7 +46,10 @@ def split_scene_per_shot(context, engine, log, selectedShots):
     processedShots = []
     for shot in shots:
 
-        # Get Shot info
+        #################
+        # Get Shot info #
+        #################
+
         shot_name = mc.getAttr(f"{shot}.shotName")  # Query shot's name.
         log(f"PROCESSING SHOT 🎯 --> {shot_name}")
         if shot_name not in selectedShots:
@@ -64,9 +67,9 @@ def split_scene_per_shot(context, engine, log, selectedShots):
                 ['code']
             )
 
-        ##############
-        # GET AUDIOS #
-        ##############
+        #######################
+        # GET AUDIOS IN RANGE #
+        #######################
 
         log(f"Getting audio/s for shot {shot_name}...")
 
@@ -178,9 +181,10 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         if not os.path.exists(os.path.dirname(camera_publish_path_abc)):
             os.makedirs(os.path.dirname(camera_publish_path_abc))
 
+        # Bake Camera
         shot_camera_baked = _bake_camera(shot_camera, start_frame-offset, end_frame-offset)
 
-        # Get camera movement information
+        # Get camera movement information and publish to SG
         cameraInfo, finalMovement, movements = camera_info.get_camera_movement(shot_camera_baked)
         log(f"CAMERA INFO ---> {cameraInfo}")
 
@@ -189,14 +193,18 @@ def split_scene_per_shot(context, engine, log, selectedShots):
 
         log("✅ Cameras exported!📹")
 
-        #################
-        # EXPORT LAYOUT #
-        #################
+        #######################
+        # EXPORT LAYOUT SCENE #
+        #######################
 
         log("INFO --> Exporting Layout...")
 
         # Delete shots from sequencer
         mc.delete(shots)
+
+        # Delete not needed audios from sequencer
+        audios_to_delete = [a for a in mc.ls(type='audio') if a not in [c["node"] for c in audio_clips]]
+        mc.delete(mc.ls(type='audio'))
 
         # Delete cameras
         _delete_all_in_group("CAMERAS")
@@ -204,10 +212,13 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         # Import shot camera (as .ma for now)
         mc.file(camera_publish_path_ma, r=True, ignoreVersion=True, namespace=shot_camera)
 
-        # solo cámaras
+        # Obtenemos las cámaras de la escena
         cams = mc.ls(type="camera")
-        cam_shapes = [cam for cam in cams if shot_camera in cam]
-        # cam_shapes = mc.ls(f"{shot_camera}:*", type="camera") or []
+
+        cameras_shape_init = ['frontShape', 'perspShape', 'sideShape', 'topShape']
+
+        # cam_shapes = [cam for cam in cams if shot_camera in cam]
+        cam_shapes = [cam for cam in cams if not cam in cameras_shape_init]
         log(f"CAMERA SHAPES -> {cam_shapes}")
 
         cam_transforms = []
@@ -220,12 +231,14 @@ def split_scene_per_shot(context, engine, log, selectedShots):
         cam_transforms = list(dict.fromkeys(cam_transforms))
         log(f"CAMERA TRANSFORMS -> {cam_transforms}")
 
-        _parent_safe(cam_transforms + [shot_camera_baked], "CAMERAS")
+        # Ponemos la cámara en su GRUPO
+        # _parent_safe(cam_transforms + [shot_camera_baked], "CAMERAS")
+        _parent_safe([shot_camera_baked], "CAMERAS")
 
-        # Load Audios
+        # Cargamos los Audios
         log("INFO --> Loading audios...")
         loaded_audios = _load_audio_clips(audio_clips, offset, tk, fields)
-        log(f"✅ Audios Loaded!🦻 --> {loaded_audios}")        
+        log(f"✅ Audios Loaded!🦻 --> {loaded_audios}")
 
         # Set frame range in scene
         mc.playbackOptions(min=start_frame-offset, max=end_frame-offset, animationStartTime=start_frame-offset, animationEndTime=end_frame-offset)
