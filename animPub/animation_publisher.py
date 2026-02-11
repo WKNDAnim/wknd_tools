@@ -79,8 +79,7 @@ def publish_animation(context, engine, log, selected_assets):
     if not os.path.exists(publish_root):
         os.makedirs(publish_root)
 
-    # errorRig = []
-
+    exported_paths = {}
     for asset in selected_assets:
 
         log(f"Processing --> {asset}")
@@ -104,37 +103,40 @@ def publish_animation(context, engine, log, selected_assets):
         # Si es un character añadimos la geo que tiene el hair
         if asset["group"] == "CHAR":
 
-            log(f"Switching rig to hair for -{asset['name']}-")
+            # Si el grupo HAIR ya existe, SKIP
+            if not mc.objExists(asset['namespace'] + ':hair'):
 
-            success = switch_to_hair_rig(geo_to_export)
+                log(f"Switching rig to hair for -{asset['name']}-")
 
-            if success:
+                success = switch_to_hair_rig(geo_to_export)
 
-                abc_path_hair = template_asset_hair_by_shot.apply_fields(scene_fields)
+                if success:
 
-                geo_to_export_hair = geo_to_export.split(":")[0] + ":hair"
+                    abc_path_hair = template_asset_hair_by_shot.apply_fields(scene_fields)
 
-                print(f"\t\t- GEO (HAIR): {geo_to_export_hair} --> {abc_path_hair}")
+                    geo_to_export_hair = geo_to_export.split(":")[0] + ":hair"
 
-                # Exportamos la geo del hair
-                exporters.export_alembic(geo_to_export_hair, abc_path_hair, frame_in, frame_out)
+                    print(f"\t\t- GEO (HAIR): {geo_to_export_hair} --> {abc_path_hair}")
 
-                print("\t 👍 Hair abc exported!")
+                    # Exportamos la geo del hair
+                    exporters.export_alembic(geo_to_export_hair, abc_path_hair, frame_in, frame_out)
 
-            else:
+                    print("\t 👍 Hair abc exported!")
 
-                # errorRig.append(asset["name"])
-                return False, f"\t ❌ ERROR: Cannot switch -{asset['name']}- Rig to hair...!"
+                else:
+
+                    # errorRig.append(asset["name"])
+                    return False, f"\t ❌ ERROR: Cannot switch -{asset['name']}- Rig to hair...!"
 
         # Exportamos la geo
         exporters.export_alembic(geo_to_export, abc_path, frame_in, frame_out)
         log("👍 Geo abc exported!")
 
+        # Lo añadimos a la lista de paths exportados
+        exported_paths[asset['name']] = abc_path
+
     print("="*60)
     log(f"Total: {len(selected_assets)} assets exported! Publishing to SG...\n")
-
-    # if errorRig:
-    #     log(f"ERROR changing Rig for: {errorRig}")
 
     # Register publish on SG
     publish = sgtk.util.register_publish(
@@ -147,7 +149,7 @@ def publish_animation(context, engine, log, selected_assets):
         comment="Publish de las caches de ANIM",
     )
 
-    return True, "✅ DONE :) You can now close this window!"
+    return True, "✅ DONE :) You can now close this window!", exported_paths
 
 #############################################################
 
@@ -229,29 +231,3 @@ def switch_to_hair_rig(asset_geo_node):
     print("\t\t\t- Done! :)")
 
     return hair_rig_dict
-
-# def _backup_current_scene_temp(scene_path):
-#     # Ruta actual de la escena en Maya
-
-#     if not scene_path:
-#         mc.error("Scene must be saved before publishing...")
-
-#     # Carpeta temporal del sistema
-#     temp_dir = tempfile.gettempdir()
-
-#     # Nombre del archivo temporal basado en el nombre real
-#     base = os.path.basename(scene_path)
-#     temp_path = os.path.join(temp_dir, f"TMP_BACKUP_{base}")
-
-#     # Copia fiel del archivo (.ma o .mb)
-#     shutil.copy2(scene_path, temp_path)
-
-#     print("Backup temporal creado en:", temp_path)
-#     return temp_path
-
-
-def format_namespace(ns):
-
-    aux = ns.title()
-    aux = aux.replace("_", "")
-    return aux

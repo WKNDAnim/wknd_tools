@@ -271,16 +271,27 @@ class AnimPubUI(MayaQWidgetDockableMixin, qt.QWidget):
 
         self.publish_btn.setText("PUBLISHING...")
 
-        # Store a backup of the main file
-        backup_file_path = _backup_current_scene_temp(self.scene_path)
+        # Cambiamos el modo de Evaluation a 'DG'
+        mc.evaluationManager(mode='off')
 
-        success, msg = animation_publisher.publish_animation(self.context, self.engine, self.log, self.get_selected())
+        success, msg, abc_paths = animation_publisher.publish_animation(self.context, self.engine, self.log, self.get_selected())
+
+        # Volvemos a 'Parallel'
+        mc.evaluationManager(mode='off')
 
         if success:
 
-            # Restore file
-            shutil.copy2(backup_file_path, self.scene_path)
-            mc.file(self.scene_path, open=True, force=True)
+            # Cargamos los alembics para check
+            for p in abc_paths:
+                ref_node = mc.file(
+                    abc_paths[p],
+                    reference=True,
+                    loadReferenceDepth="all",
+                    mergeNamespacesOnClash=False,
+                    namespace=f"exported_{p}",
+                )
+                warn = "The exported abc files have been referenced in the scene, please check all is fine before continue :)"
+                mc.confirmDialog(title='Finishing...', message=warn, button=['Okay'])
 
             self.publish_btn.setText(msg)
 
