@@ -539,3 +539,82 @@ def _load_audio_clips(audio_clips, shot_offset, tk, fields):
         loaded_audios.append(audio_node)
 
     return loaded_audios
+
+
+def get_hair_rig_from_character(asset_geo_node):
+    """this gets from asset['namespace'] + ':geo' a shape and Id attr and return 
+    last published hair rig"""
+
+    import sgtk
+    engine = sgtk.platform.current_engine()
+    sg = engine.shotgun
+
+    # get one shape from geo grp and its asset_id
+    geo_shape = mc.listRelatives(asset_geo_node, ad=1, c=1, type='mesh')[0]
+    asset_id = mc.getAttr(f'{geo_shape}.GUS_asset_id')
+
+    fields = [
+        'code',                    # Nombre de la publicación
+        'version_number',          # Número de versión
+        'path',                    # Path al archivo publicado
+        'created_at',              # Fecha de creación
+        'created_by',              # Usuario que lo creó
+        'description',             # Descripción
+        'published_file_type',     # Tipo de archivo publicado
+        'task',                    # Tarea asociada
+        'version',                 # Versión asociada (si existe)
+        'sg_status_list'           # Status de SG
+    ]
+
+    # Filtros para la búsqueda
+    filters = [
+        ['entity', 'is', {'type': 'Asset', 'id': asset_id}],
+        ['task.Task.content', 'is', 'RigAnimation'],
+        ['code', 'contains', 'hair'],  # El nombre contiene "hair"
+        ['code', 'contains', '.ma']    # El nombre contiene ".ma"  # Filtra por tipo "Rig"
+    ]
+
+    rig_publishes = sg.find('PublishedFile', filters, fields)
+    rig_publishes.sort(key=lambda x: x.get('version_number', 0), reverse=True)
+
+    approved_hair_rig_publishes = [publish for publish in rig_publishes if publish['sg_status_list'] == 'apr']
+
+    hair_rig = approved_hair_rig_publishes[0] if approved_hair_rig_publishes else None
+
+    if hair_rig:
+
+        hair_rig_path = hair_rig['path']['local_path']
+        return hair_rig_path
+    else:
+        return None
+
+
+def switch_to_hair_rig(asset_geo_node):
+
+    hair_rig_dict = {}
+
+    print("\t\t\t- Switching to hair Rig...")
+
+    hair_rig_dict['hair_rig_path'] = get_hair_rig_from_character(asset_geo_node)
+
+    print(f"\t\t\t- HAIR RIG PATH: {hair_rig_dict['hair_rig_path']}")
+
+    if not hair_rig_dict['hair_rig_path']:
+        return False
+
+    mesh = mc.listRelatives(asset_geo_node, ad=1)[0]
+    hair_rig_dict['reference_node'] = mc.referenceQuery(mesh, referenceNode=True)
+
+    print(f"\t\t\t- REF NODE: {hair_rig_dict['reference_node']}")
+
+    # Get current rig
+    hair_rig_dict['current_path'] = mc.referenceQuery(hair_rig_dict['reference_node'], filename=True)
+
+    print(f"\t\t\t- CURRENT PATH: {hair_rig_dict['current_path']}")
+
+    # Replace actual rig for hair rig
+    mc.file(hair_rig_dict['hair_rig_path'], loadReference=hair_rig_dict['reference_node'])
+
+    print("\t\t\t- Done! :)")
+
+    return hair_rig_dict

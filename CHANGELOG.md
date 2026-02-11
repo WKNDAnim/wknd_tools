@@ -7,10 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-02-11
+
+   - ANIM PUBLISHER:
+      - Evitamos hacer el cambio a la geo de Rig de HAIR si ya está cargada en la escena.
+      - Quitamos la lógica de backupear la escena para restaurarla.
+      - Cambiamos el manager a DG para exportar hair.
+   
+   - RIG ATTR UPDATER:
+      - Añadimos un script que busca en SG todos los PROPS que tengan la task de Shading aprobada. Abre su última escena de Rig, carga el alembic de Shading y, para cada mesh:
+         - Copia los atributos custom de GUS y los que hayan sido modificados de Arnold.
+         - Copia las UVs al Rig conectando el outMesh de la shape al inMesh del ShapeOrig.
+
+   - PROP UPDATER:
+      - Hacemos un updater SG agnostic. Busca la última versión de Rig en la carpeta publish y hace replace de la referencia.
+
 ## [1.1.2] - 2026-02-05
 
    - SPLITTER:
-      - Fix: Se quedaban todos los audios en el Trax de las escenas de LAY y ANIM. Los eliminamos y los volvemos a cargar dependiendo de si se necesitan
+      - Fix: Se quedaban todos los audios en el Trax de las escenas de LAY y ANIM. Los eliminamos y los volvemos a cargar dependiendo de si se necesitan.
 
 ## [1.1.1] - 2026-02-02
 
