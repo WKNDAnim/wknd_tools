@@ -6,7 +6,7 @@ def _search_props():
 
     if mc.objExists('PROPS'):
         char_children = mc.listRelatives('PROPS', children=True, type='transform') or []
-        print(f"\n🔍 Analizando {len(char_children)} characters...")
+        print(f"\n🔍 Analizando {len(char_children)} props...")
         return char_children
     return False
 
@@ -19,9 +19,9 @@ def _search_chars():
         return char_children
     return False
 
-
 def _update_rig(node):
 
+    # node = f"{asset_name}_scene:{asset_name}"
     print("-"*30, node, "-"*30)
 
     # Obtener el reference node
@@ -92,11 +92,10 @@ def _update_rig_to_hair(node):
 
     return True
 
-
 def update_all_outdated():
 
     updated = []
-
+  
     props = _search_props()
     if props:
         for node in props:
@@ -111,5 +110,5 @@ def update_all_outdated():
             if updt:
                 updated.append(node)
 
-        msg = f"{len(updated)} rigs updated to last version :)"
-        mc.confirmDialog(title='Update Rigs', message=msg, button=['Okay'])
+    msg = f"{len(updated)} rigs updated to last version :)"
+    mc.confirmDialog(title='Update Rigs', message=msg, button=['Okay'])
