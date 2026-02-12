@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-02-12
+
+   - PROP UPDATER:
+      - Se añade que también actualiza Characters al hair o a la última versión
+
+
 ## [1.1.3] - 2026-02-11
 
    - ANIM PUBLISHER:
