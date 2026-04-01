@@ -56,6 +56,8 @@ def create_movie_from_folder(folder, output_path=None):
 
     """
 
+    print("INFO - Creating Movie from Folder...")
+
     if not output_path:
         temp_dir = os.path.realpath(tempfile.gettempdir())
         output_video = os.path.join(temp_dir, "wknd_playblast.mp4")
@@ -70,6 +72,8 @@ def create_movie_from_folder(folder, output_path=None):
         folder,
         output_video,
         'folder')
+
+    print("INFO - Video created from folder")
 
     return output_video if success else None
 

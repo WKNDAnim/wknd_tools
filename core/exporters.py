@@ -126,7 +126,7 @@ def export_shaders_and_textures_for_hair(asset_name, shaders_file_path, textures
         mesh_shader = {}
         shaders_list = list()
         for hair in hair_in_asset:
-            shading_engine = mc.listConnections(hair, source=False, destination=True,type='shadingEngine')
+            shading_engine = mc.listConnections(hair, source=False, destination=True, type='shadingEngine')
             if not shading_engine:
                 print(f" WARNING: No Shading Engine for {hair}.")
                 continue

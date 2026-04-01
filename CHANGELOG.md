@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.5] - 2026-02-16
+
+   - ANIM PUBLISHER:
+      - _get_instance_number(namespace) --> Tenemos en cuenta si el namespace es "compuesto" y cogemos solamente la parte que necesitamos.
+
+      - Arreglamos:
+         - Si la geo de "hair" ya estaba cargada no exportaba el abc de hair
+         - Si hay un elemento repetido, exporta con instanceNum y lo carga en la escena
+
+   - FINAL LAYOUT:
+
+      - sendFlaytoDeadline:
+         - Recoge las secuencias que tienen la animación aprobada y crea una UI de python para que Prod lance las secuencias a Deadline.
+         - Crea dos jobs:
+            - Uno abre el mastershot, exporta y publica el JSON que define el SET con `setAutoExporter.py`
+            - El otro crea la escena de Lighting y la de FLAY y crea un batch de render por Shot.
+
+      - sendFlaytoRender:
+         - Crea la escena de Lighting y la de FLAY 
+         - Setea la Render Layer con el script `createColissionRenderLayer.py`
+         - Crea un batch de render por Shot con dos Jobs:
+            - MayaBatch de la escena de FLAY
+            - Render QT --> Renderiza una movie de los exr renderizados y la publica a SG
+
+
 ## [1.1.4] - 2026-02-12
 
    - PROP UPDATER:

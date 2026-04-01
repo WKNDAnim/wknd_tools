@@ -31,42 +31,7 @@ now = datetime.datetime.now()
 tk = sgtk.sgtk_from_path(r"Z:\05Framework\users\aferraz\packages\dev_tk\master_tk_config")
 sg = tk.shotgun
 
-# engine = sgtk.platform.current_engine()
-# tk = engine.sgtk
-# sg = engine.shotgun
-# context = engine.context
-
 ###########################################
-
-
-# def add_attributes(mesh, asset_info):
-
-#     # Create Attributes
-#     for key in asset_info:
-
-#         if not mc.attributeQuery(key, node=mesh, exists=True):
-
-#             if isinstance(asset_info[key], str):
-#                 mc.addAttr(mesh, longName=key, dataType='string')
-#             elif isinstance(asset_info[key], int):
-#                 mc.addAttr(mesh, longName=key, at='long')
-#             elif isinstance(asset_info[key], float):
-#                 mc.addAttr(mesh, longName=key, at='double')
-#             elif isinstance(asset_info[key], bool):
-#                 mc.addAttr(mesh, longName=key, at='bool')
-
-#         if isinstance(asset_info[key], str):
-
-#             mc.setAttr(f"{mesh}.{key}", lock=False)
-#             mc.setAttr(f"{mesh}.{key}", asset_info[key], type='string')
-#             mc.setAttr(f"{mesh}.{key}", lock=True)
-
-#         else:
-
-#             mc.setAttr(f"{mesh}.{key}", lock=False)
-#             mc.setAttr(f"{mesh}.{key}", asset_info[key])
-#             mc.setAttr(f"{mesh}.{key}", lock=True)
-
 
 _SUFFIXES = ("R", "G", "B", "X", "Y", "Z")
 
@@ -167,7 +132,7 @@ def add_attributes(mesh, asset_info):
                 mc.setAttr(plug, value)
 
         finally:
-            mc.setAttr(plug) #, lock=was_locked)
+            mc.setAttr(plug)  #, lock=was_locked)
 
 
 #########################
@@ -360,225 +325,228 @@ def main():
     for asset in assets:
 
         asset_name = asset["entity.Asset.code"].replace(" ", "")
-
         logger.info(f"Procesando {asset_name} ------------------------------")
 
-        # GET RIG SCENE ###############################
+        try:
 
-        fields = {"Task": "RigAnimation"}
-        fields["sg_asset_type"] = asset["entity.Asset.sg_asset_type"]
-        fields["Asset"] = asset_name
+            # GET RIG SCENE ###############################
 
-        # Buscamos paths que matcheen el template
-        p = tk.paths_from_template(template_work, fields)
-        if not p:
-            errors[asset_name] = "No hay escena de RigAnimation!"
-            continue
+            fields = {"Task": "RigAnimation"}
+            fields["sg_asset_type"] = asset["entity.Asset.sg_asset_type"]
+            fields["Asset"] = asset_name
 
-        # Ordenamos los paths y cogemos el más nuevo
-        p.sort(reverse=True)
-        work_path = p[0]
-        logger.info(f"\t- Work path: {work_path}")
-
-        # Get fields from scene
-        fields_work = template_work.get_fields(work_path)
-
-        # Get RigAnimation task from SG
-        task = sg.find_one("Task", 
-                           [["content", "is", fields_work["Task"]], ["entity.Asset.id", "is", asset["entity.Asset.id"]]], 
-                           ["content", "entity", "step"])
-
-        # GET ABC PATH #################################
-
-        fields["Task"] = "Shading"
-
-        # Buscamos paths que matcheen el template
-        p_abc = tk.paths_from_template(template_abc, fields)
-        if not p_abc:
-            errors[asset_name] = "No hay Abc!"
-            continue
-
-        # Ordenamos los paths y cogemos el más nuevo
-        p_abc.sort(reverse=True)
-        abc_path = p_abc[0]
-        logger.info(f"\t- ABC path: {abc_path}")
-
-        # Abrimos la escena #############################
-
-        mc.file(work_path, open=True, f=True)
-
-        logger.info("\t- Escena abierta :)")
-
-        # Referenciamos el abc
-        namespace = f"{asset_name}_scene"
-
-        ref_node = mc.file(
-            abc_path,
-            reference=True,
-            loadReferenceDepth="all",
-            mergeNamespacesOnClash=False,
-            namespace=namespace,
-        )
-
-        logger.info(f"\t- Alembic importado :)")
-
-        # Cogemos el frame actual para hacer el refresh
-        frame = mc.currentTime(q=True)
-
-        #################################
-        # Recorremos las meshes del abc #
-        #################################
-
-        logger.info(f"\t- Procesando meshes...")
-
-        ref = mc.ls(f"{namespace}:*", assemblies=True)
-
-        logger.info(f"\t- NAMESPACE = {namespace}")
-        logger.info(f"\t- REF = {ref}")
-
-        # Buscamos las mesh del abc y el rig
-        meshes_in_ref = mc.listRelatives(f"{ref[0]}|{namespace}:geo", ad=True, type='mesh')  # , f=True)
-        meshes_in_rig = mc.listRelatives(f"{asset_name}|geo", ad=True, type='mesh')
-
-        asset_info = {}
-
-        for mesh in meshes_in_ref:
-
-            # Añadimos los atributos de arnold (esto se puede mejorar y hacer solo una vez)
-            # attrs = attrs + _list_arnold_attrs(mesh)
-
-            mod_ai_attr = get_modified_ai_attrs(mesh, include_connected=False)
-            attrs = attrs + [k for k in mod_ai_attr.keys()]
-
-            asset_info[mesh.split(":")[-1]] = {}
-
-            # # Get Attr Values
-            # attrErrors = []
-            # for attr in attrs:
-            #     try:
-            #         value = mc.getAttr(f"{mesh}.{attr}")
-            #         asset_info[mesh.split(":")[-1]][attr] = value
-            #     except:
-            #         attrErrors.append(attr)
-
-            ########
-            # Get Attr Values (robusto para float3/double3)
-            attrErrors = []
-            mesh_key = mesh.split(":")[-1]
-            dst = asset_info.setdefault(mesh_key, {})
-
-            # Helpers
-            _suffixes = ("R", "G", "B", "X", "Y", "Z")
-
-            def _is_component(a):
-                return len(a) > 1 and a.endswith(_suffixes)
-
-            def _parent_attr(a):
-                return a[:-1]
-
-            for attr in attrs:
-                try:
-                    plug = f"{mesh}.{attr}"
-                    if mc.listConnections(plug, source=True, destination=False):
-                        continue
-
-                    # Si es componente (aiShadowColorR), guardamos el componente
-                    # pero además intentaremos colapsar al padre después
-                    value = mc.getAttr(plug)
-                    dst[attr] = value
-
-                except Exception:
-                    attrErrors.append(attr)
-
-            # ---- Collapsar componentes a su padre (R/G/B o X/Y/Z) ----
-            # Ej: aiShadowColorR/G/B -> aiShadowColor = [(r,g,b)]
-            #     aiSomethingX/Y/Z   -> aiSomething = [(x,y,z)]
-            for a in list(dst.keys()):
-                if not _is_component(a):
-                    continue
-
-                parent = _parent_attr(a)
-
-                # Si el padre existe en el nodo y es float3/double3, lo reconstruimos
-                if mc.attributeQuery(parent, node=mesh, exists=True):
-                    ptype = mc.getAttr(f"{mesh}.{parent}", type=True)
-                    if ptype in ("float3", "double3"):
-
-                        # Coge componentes, si faltan los pone a 0
-                        def _get_comp(suf):
-                            v = dst.get(parent + suf)
-                            # getAttr de un componente suele ser float; si viene [float], aplanamos
-                            if isinstance(v, (list, tuple)) and len(v) == 1 and not isinstance(v[0], (list, tuple)):
-                                v = v[0]
-                            return float(v) if v is not None else 0.0
-
-                        x = _get_comp("R") if (parent + "R") in dst else _get_comp("X")
-                        y = _get_comp("G") if (parent + "G") in dst else _get_comp("Y")
-                        z = _get_comp("B") if (parent + "B") in dst else _get_comp("Z")
-
-                        dst[parent] = [(x, y, z)]
-
-                        # opcional: quitar los componentes para no intentar setearlos luego
-                        for suf in ("R", "G", "B", "X", "Y", "Z"):
-                            dst.pop(parent + suf, None)
-            ###########
-
-            if attrErrors:
-                errors[asset_name] = attrErrors
-
-            ################
-            # COPIAMOS UVs #
-            ################
-
-            # shapeOrig = mesh.split(":")[-1].replace("Shape", "ShapeOrig")
-            for sh in meshes_in_rig:
-                if mesh.split(":")[-1].split("_")[0] in sh and "shapeorig" in sh.lower():
-                    shapeOrig = sh
-                    break
-            if not shapeOrig:
-                errors[asset_name] = f"Cannot find ShapeOrig for {mesh}"
+            # Buscamos paths que matcheen el template
+            p = tk.paths_from_template(template_work, fields)
+            if not p:
+                errors[asset_name] = "No hay escena de RigAnimation!"
                 continue
 
-            # Conectamos
-            mc.connectAttr(f"{mesh}.outMesh", f"{shapeOrig}.inMesh")
-            # Refresh
-            time.sleep(0.3)
-            mc.currentTime(frame+1)
-            # Desconectamos
-            mc.disconnectAttr(f"{mesh}.outMesh", f"{shapeOrig}.inMesh")
-            # Refresh
-            mc.currentTime(frame-1)
-            mc.refresh(force=True)
+            # Ordenamos los paths y cogemos el más nuevo
+            p.sort(reverse=True)
+            work_path = p[0]
+            logger.info(f"\t- Work path: {work_path}")
 
-            #####################
-            # ADD ATTR TO SHAPE #
-            #####################
+            # Get fields from scene
+            fields_work = template_work.get_fields(work_path)
 
-            add_attributes(mesh.split(":")[-1], asset_info[mesh.split(":")[-1]])
+            # Get RigAnimation task from SG
+            task = sg.find_one("Task", 
+                            [["content", "is", fields_work["Task"]], ["entity.Asset.id", "is", asset["entity.Asset.id"]]], 
+                            ["content", "entity", "step"])
 
-        # Eliminamos la ref del ABC
-        logger.info(f"\t- Eliminamos la ref del ABC...")
-        refFile = mc.referenceQuery(ref_node, filename=True, withoutCopyNumber=True)
-        mc.file(refFile, removeReference=True)
+            # GET ABC PATH #################################
 
-        if not attrErrors:
+            fields["Task"] = "Shading"
 
-            logger.info(f"\t- Publicando...")
+            # Buscamos paths que matcheen el template
+            p_abc = tk.paths_from_template(template_abc, fields)
+            if not p_abc:
+                errors[asset_name] = "No hay Abc!"
+                continue
 
-            # PUBLISH TO SHOTGRID
-            _publish_to_SG(asset, task, fields_work)
+            # Ordenamos los paths y cogemos el más nuevo
+            p_abc.sort(reverse=True)
+            abc_path = p_abc[0]
+            logger.info(f"\t- ABC path: {abc_path}")
 
-            # Update checkbox on SG
-            sg.update("Asset", asset["entity.Asset.id"], {"sg_uv_on_rig": True})
+            # Abrimos la escena #############################
 
-            logger.info(f"\t- ✅ DONE! ^^ ==================================")
+            mc.file(work_path, open=True, f=True)
 
-        else:
-            logger.info(f"\t- ❌❌❌ SKIPPING publish of {asset_name} due to attributte errors!")
+            logger.info("\t- Escena abierta :)")
+
+            # Referenciamos el abc
+            namespace = f"{asset_name}_scene"
+
+            ref_node = mc.file(
+                abc_path,
+                reference=True,
+                loadReferenceDepth="all",
+                mergeNamespacesOnClash=False,
+                namespace=namespace,
+            )
+
+            logger.info(f"\t- Alembic importado :)")
+
+            # Cogemos el frame actual para hacer el refresh
+            frame = mc.currentTime(q=True)
+
+            #################################
+            # Recorremos las meshes del abc #
+            #################################
+
+            logger.info(f"\t- Procesando meshes...")
+
+            ref = mc.ls(f"{namespace}:*", assemblies=True)
+
+            logger.info(f"\t- NAMESPACE = {namespace}")
+            logger.info(f"\t- REF = {ref}")
+
+            # Buscamos las mesh del abc y el rig
+            meshes_in_ref = mc.listRelatives(f"{ref[0]}|{namespace}:geo", ad=True, type='mesh')  # , f=True)
+            meshes_in_rig = mc.listRelatives(f"{asset_name}|geo", ad=True, type='mesh')
+
+            asset_info = {}
+
+            for mesh in meshes_in_ref:
+
+                mod_ai_attr = get_modified_ai_attrs(mesh, include_connected=False)
+                attrs = attrs + [k for k in mod_ai_attr.keys()]
+
+                asset_info[mesh.split(":")[-1]] = {}
+
+                # # Get Attr Values
+                # attrErrors = []
+                # for attr in attrs:
+                #     try:
+                #         value = mc.getAttr(f"{mesh}.{attr}")
+                #         asset_info[mesh.split(":")[-1]][attr] = value
+                #     except:
+                #         attrErrors.append(attr)
+
+                ########
+                # Get Attr Values (robusto para float3/double3)
+                attrErrors = []
+                mesh_key = mesh.split(":")[-1]
+                dst = asset_info.setdefault(mesh_key, {})
+
+                # Helpers
+                _suffixes = ("R", "G", "B", "X", "Y", "Z")
+
+                def _is_component(a):
+                    return len(a) > 1 and a.endswith(_suffixes)
+
+                def _parent_attr(a):
+                    return a[:-1]
+
+                for attr in attrs:
+                    try:
+                        plug = f"{mesh}.{attr}"
+                        if mc.listConnections(plug, source=True, destination=False):
+                            continue
+
+                        # Si es componente (aiShadowColorR), guardamos el componente
+                        # pero además intentaremos colapsar al padre después
+                        value = mc.getAttr(plug)
+                        dst[attr] = value
+
+                    except Exception:
+                        attrErrors.append(attr)
+
+                # ---- Collapsar componentes a su padre (R/G/B o X/Y/Z) ----
+                # Ej: aiShadowColorR/G/B -> aiShadowColor = [(r,g,b)]
+                #     aiSomethingX/Y/Z   -> aiSomething = [(x,y,z)]
+                for a in list(dst.keys()):
+                    if not _is_component(a):
+                        continue
+
+                    parent = _parent_attr(a)
+
+                    # Si el padre existe en el nodo y es float3/double3, lo reconstruimos
+                    if mc.attributeQuery(parent, node=mesh, exists=True):
+                        ptype = mc.getAttr(f"{mesh}.{parent}", type=True)
+                        if ptype in ("float3", "double3"):
+
+                            # Coge componentes, si faltan los pone a 0
+                            def _get_comp(suf):
+                                v = dst.get(parent + suf)
+                                # getAttr de un componente suele ser float; si viene [float], aplanamos
+                                if isinstance(v, (list, tuple)) and len(v) == 1 and not isinstance(v[0], (list, tuple)):
+                                    v = v[0]
+                                return float(v) if v is not None else 0.0
+
+                            x = _get_comp("R") if (parent + "R") in dst else _get_comp("X")
+                            y = _get_comp("G") if (parent + "G") in dst else _get_comp("Y")
+                            z = _get_comp("B") if (parent + "B") in dst else _get_comp("Z")
+
+                            dst[parent] = [(x, y, z)]
+
+                            # opcional: quitar los componentes para no intentar setearlos luego
+                            for suf in ("R", "G", "B", "X", "Y", "Z"):
+                                dst.pop(parent + suf, None)
+                ###########
+
+                if attrErrors:
+                    errors[asset_name] = attrErrors
+
+                ################
+                # COPIAMOS UVs #
+                ################
+
+                # shapeOrig = mesh.split(":")[-1].replace("Shape", "ShapeOrig")
+                for sh in meshes_in_rig:
+                    if mesh.split(":")[-1].split("_")[0] in sh and "shapeorig" in sh.lower():
+                        shapeOrig = sh
+                        break
+                if not shapeOrig:
+                    errors[asset_name] = f"Cannot find ShapeOrig for {mesh}"
+                    continue
+
+                # Conectamos
+                mc.connectAttr(f"{mesh}.outMesh", f"{shapeOrig}.inMesh")
+                # Refresh
+                time.sleep(0.3)
+                mc.currentTime(frame+1)
+                # Desconectamos
+                mc.disconnectAttr(f"{mesh}.outMesh", f"{shapeOrig}.inMesh")
+                # Refresh
+                mc.currentTime(frame-1)
+                mc.refresh(force=True)
+
+                #####################
+                # ADD ATTR TO SHAPE #
+                #####################
+
+                add_attributes(mesh.split(":")[-1], asset_info[mesh.split(":")[-1]])
+
+            # Eliminamos la ref del ABC
+            logger.info(f"\t- Eliminamos la ref del ABC...")
+            refFile = mc.referenceQuery(ref_node, filename=True, withoutCopyNumber=True)
+            mc.file(refFile, removeReference=True)
+
+            if not attrErrors:
+
+                logger.info(f"\t- Publicando...")
+
+                # PUBLISH TO SHOTGRID
+                _publish_to_SG(asset, task, fields_work)
+
+                # Update checkbox on SG
+                sg.update("Asset", asset["entity.Asset.id"], {"sg_uv_on_rig": True})
+
+                logger.info(f"\t- ✅ DONE! ^^ ==================================")
+
+            else:
+                logger.info(f"\t- ❌❌❌ SKIPPING publish of {asset_name} due to attributte errors!")
+
+        except:
+
+            errors[asset_name] = f"Cannot process asset --> {asset_name}"
 
     if errors:
         logger.info(f"---------------- ❌ ERRORES ❌ ----------------\n ")
-        logger.info(pprint.pprint(errors))
+        logger.info(errors)
+        # logger.info(pprint.pprint(errors))
 
 
 #############################################################################

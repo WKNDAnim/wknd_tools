@@ -535,8 +535,13 @@ def _backup_current_scene_temp(scene_path):
     return temp_path
 
 
-def _get_instance_number(name):
+def _get_instance_number(namespace):
     "Dado un string del tipo 'cono_scene1' devuelve (cono, scene, 1)"
+
+    if ":" in namespace:
+        name = namespace.split(":")[-1]
+    else:
+        name = namespace
 
     pattern = re.compile(r"^(.*?)(\d+)?$")
 
@@ -544,7 +549,12 @@ def _get_instance_number(name):
     if not match:
         return f"ERROR: Pattern do not match with name '{name}'..."
 
+    print(match)
+
     root, number = match.groups()
+
+    print(root)
+
     name, variant = root.split("_")
     number = int(number) if number else None
 

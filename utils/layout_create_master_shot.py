@@ -18,7 +18,7 @@ def get_sequence_shots_data(sequence_code):
     Returns:
         dict: Diccionario con formato para crear secuencia de cámaras
     """
-    
+
     # Query 1: Obtener la secuencia
     sequence = sg.find_one(
         'Sequence',

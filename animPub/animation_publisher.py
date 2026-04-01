@@ -19,6 +19,7 @@ def publish_animation(context, engine, log, selected_assets):
 
     scene_path = mc.file(q=True, sn=True)
     log(f"Publishing: {scene_path}")
+
     #################
     # Get templates #
     #################
@@ -94,6 +95,12 @@ def publish_animation(context, engine, log, selected_assets):
         if asset['instance_num']:
             scene_fields['copyNum'] = asset['instance_num']
 
+        # Formamos el nombre del asset incluyendo copia
+        if asset['instance_num']:
+            asset_index = f"{asset['name']}{asset['instance_num']}"
+        else:
+            asset_index = asset['name']
+
         # Formamos el path de export
         abc_path = template_asset_by_shot.apply_fields(scene_fields)
 
@@ -110,30 +117,33 @@ def publish_animation(context, engine, log, selected_assets):
 
                 success = switch_to_hair_rig(geo_to_export)
 
-                if success:
+            else:
+                success = True
 
-                    abc_path_hair = template_asset_hair_by_shot.apply_fields(scene_fields)
+            # Exportamos la geo del hair
+            if success:
 
-                    geo_to_export_hair = geo_to_export.split(":")[0] + ":hair"
+                abc_path_hair = template_asset_hair_by_shot.apply_fields(scene_fields)
 
-                    print(f"\t\t- GEO (HAIR): {geo_to_export_hair} --> {abc_path_hair}")
+                geo_to_export_hair = geo_to_export.split(":")[0] + ":hair"
 
-                    # Exportamos la geo del hair
-                    exporters.export_alembic(geo_to_export_hair, abc_path_hair, frame_in, frame_out)
+                print(f"\t\t- GEO (HAIR): {geo_to_export_hair} --> {abc_path_hair}")
 
-                    print("\t 👍 Hair abc exported!")
+                # Exportamos la geo del hair
+                exporters.export_alembic(geo_to_export_hair, abc_path_hair, frame_in, frame_out)
 
-                else:
+                print("\t 👍 Hair abc exported!")
 
-                    # errorRig.append(asset["name"])
-                    return False, f"\t ❌ ERROR: Cannot switch -{asset['name']}- Rig to hair...!"
+            else:
+
+                return False, f"\t ❌ ERROR: Cannot switch -{asset['name']}- Rig to hair...!"
 
         # Exportamos la geo
         exporters.export_alembic(geo_to_export, abc_path, frame_in, frame_out)
         log("👍 Geo abc exported!")
 
         # Lo añadimos a la lista de paths exportados
-        exported_paths[asset['name']] = abc_path
+        exported_paths[asset_index] = abc_path
 
     print("="*60)
     log(f"Total: {len(selected_assets)} assets exported! Publishing to SG...\n")
