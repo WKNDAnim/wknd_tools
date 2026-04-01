@@ -5,9 +5,9 @@ import os
 def _search_props():
 
     if mc.objExists('PROPS'):
-        char_children = mc.listRelatives('PROPS', children=True, type='transform') or []
-        print(f"\n🔍 Analizando {len(char_children)} characters...")
-        return char_children
+        props_children = mc.listRelatives('PROPS', children=True, type='transform') or []
+        print(f"\n🔍 Analizando {len(props_children)} props...")
+        return props_children
     return False
 
 
@@ -37,6 +37,7 @@ def _update_rig(node):
 
     rig_files = os.listdir(rig_pub_root)
     rig_files.sort(reverse=True)
+    rig_files = [file for file in rig_files if not os.path.isdir(os.path.join(rig_pub_root, file))]
 
     rig_path = os.path.join(rig_pub_root, rig_files[0])
     print(rig_path)
@@ -91,6 +92,34 @@ def _update_rig_to_hair(node):
     print(f"{os.path.basename(current_path)} --> {os.path.basename(rig_path)}")
 
     return True
+
+
+def _update_mdl_to_shad():
+
+    ref_paths = mc.file(q=True, r=True)
+
+    updated_assets = []
+
+    for ref in ref_paths:
+        if "model" in ref.lower():
+            print(ref)
+            asset_root = ref.split("/MDL/")[0]
+            asset_name = ref.split("/MDL/")[0].split("/")[-1]
+
+            cache_shad_root = os.path.join(asset_root, r"SURF/Shading/publish/caches/")
+            cache_shad = os.listdir(cache_shad_root)
+            cache_shad.sort(reverse=True)
+            shad_path = os.path.join(cache_shad_root, cache_shad[0])
+
+            ref_node = mc.referenceQuery(ref, referenceNode=True)
+            print(f" - Updating '{ref_node}' to --> '{shad_path}'")
+
+            mc.file(shad_path, loadReference=ref_node)
+
+            updated_assets.append(asset_name)
+
+    msg = f"Done! {len(updated_assets)} assets updated!"
+    mc.confirmDialog(title='Model to Shad', message=msg, button=['Okay'])
 
 
 def update_all_outdated():

@@ -168,8 +168,7 @@ class SplitterUI(MayaQWidgetDockableMixin, qt.QWidget):
             if shot not in self.shots:
                 checkbox.setStyleSheet("color: red;")
                 checkbox.setChecked(False)
-            
-                
+
             # checkbox.stateChanged.connect(lambda state, texto=shot: self.on_checkbox_changed(state, texto))
 
             # Calcular posición en la cuadrícula
