@@ -95,6 +95,12 @@ def publish_animation(context, engine, log, selected_assets):
         if asset['instance_num']:
             scene_fields['copyNum'] = asset['instance_num']
 
+        # Formamos el nombre del asset incluyendo copia
+        if asset['instance_num']:
+            asset_index = f"{asset['name']}{asset['instance_num']}"
+        else:
+            asset_index = asset['name']
+
         # Formamos el path de export
         abc_path = template_asset_by_shot.apply_fields(scene_fields)
 
