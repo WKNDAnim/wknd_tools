@@ -4,13 +4,18 @@ import maya.cmds as mc
 import maya.mel as mel
 import os
 import datetime
+import shutil
+import subprocess
 from . import exporters
 from . import version as version_core
-from ..utils import add_attributes
+from ..utils import add_attributes, createColissionRenderLayer
+from ..flay import sendFLayRender
 import importlib
 importlib.reload(exporters)
 importlib.reload(version_core)
 importlib.reload(add_attributes)
+importlib.reload(createColissionRenderLayer)
+importlib.reload(sendFLayRender)
 
 
 class Publisher:
@@ -163,6 +168,12 @@ class Publisher:
 
             # Publish version with video to SG to approve shot.
             print('publish version with video to SG, animation will be cached once animation is approved or needed by lighting')
+
+        # FINAL LAYOUT
+        elif self.context.task['name'] == 'FLay':
+
+            self._create_lgt_from_flay()
+            return
 
         # LIGHTING
         elif self.context.task['name'] == 'Lighting':
@@ -403,6 +414,124 @@ class Publisher:
             self.log("✓ USD Published!!\n")
         else:
             self.log(f"❌ ERROR: USD not exported...")
+
+    def _create_lgt_from_flay(self):
+
+        self.log("- Publicando FLAY...")
+
+        template = self.tk.templates["maya_shot_work"]
+        fields_flay = template.get_fields(self.file_path)
+
+        # Get Final Lay path
+        lgt_fields = fields_flay.copy()
+        lgt_fields["Task"] = "Lighting"
+        lgt_fields["Step"] = "LGT"
+
+        # Query FLAY task
+        filters_task = [
+            ["entity.Shot.code", "is", fields_flay["Shot"]],
+            ["step.Step.code", "is", "Final Layout"],
+            ["content", "is", fields_flay["Task"]],
+            ]
+        queries_task = ["entity.Shot.id"]
+        task_flay = self.sg.find_one("Task", filters_task, queries_task)
+
+        # Resolve template
+        lgt_path = template.apply_fields(lgt_fields)
+
+        # Buscamos el transform de la cámara
+        self.log("- Buscando cámara")
+
+        cams = mc.ls(type='camera')
+        for i in cams:
+            if "bakedShape" in i:
+                camera_top = mc.listRelatives(i, p=1)[0]
+
+        ######################
+        # Lanzamos el render #
+        ######################
+
+        self.log("- Lanzando el job a Deadline...")
+
+        # Get Output path
+        render_template = self.tk.templates["maya_shot_render_root"]
+        render_root_path = render_template.apply_fields(fields_flay)
+
+        self.log(f"\t - Render OUT root: {render_root_path}")
+
+        filters_shot = [
+            ["code", "is", lgt_fields["Shot"]],
+            ]
+        queries_shot = ["sg_cut_duration", "sg_cut_in", "sg_cut_out"]
+        shot_info = self.sg.find_one("Shot", filters_shot, queries_shot)
+
+        duration = (shot_info['sg_cut_out'] + 1) - (shot_info['sg_cut_in'] - 1) + 1
+        workers = 5
+        threshold = 50
+        chunk = duration if duration < threshold else int(round(duration/workers + .5))  # Le sumamos 0.5 para que siempre redondee hacia arriba
+
+        self.log(f"\t - Submitting Render Job to Deadline...")
+
+        RENDER_QT_SCRIPT = os.path.join(os.path.dirname(os.path.dirname(__file__)), r"utils\render_qt_and_publish.py")
+
+        result = sendFLayRender.submit_render_and_post_job(
+            post_script_path=RENDER_QT_SCRIPT,
+            shot_name=lgt_fields["Shot"],
+            scene_path=self.file_path,
+            frames=f"{shot_info['sg_cut_in']-1}-{shot_info['sg_cut_out']+1}",
+            maya_version="2026",
+            pool="none",
+            group="none",
+            priority=50,
+            chunk_size=chunk,
+            camera=f"|CAMERA|{camera_top}",
+            renderer="arnold",
+            output_path=render_root_path,
+        )
+
+        # print(result["render_job_id"])
+        # print(result["post_job_id"])
+
+        print("- Job lanzado ")
+
+        # Cambiamos el status de la task FLAY a IP
+        self.sg.update(
+            "Task",
+            task_flay["id"],
+            {"sg_status_list": "ip"}
+            )
+
+        print("- Task updated! :) ")
+
+        # Chek de AUTO FLAY en el Shot
+        self.sg.update(
+            "Shot",
+            task_flay["entity.Shot.id"],
+            {"sg_auto_flay": True}
+            )
+
+        print("- Shot updated! :) ")
+
+        mc.file(save=True, f=True)
+
+        ###############
+        # Copy to LGT #
+        ###############
+
+        # Limpiamos la escena
+        print("- Limpando escena...")
+        createColissionRenderLayer.clear_render_setup_layers()
+
+        mc.file(save=True, f=True)
+
+        # Copiamos a Lighting
+        self.log(f"- Copiando {self.file_path} --> {lgt_path}")
+        shutil.copy2(self.file_path, lgt_path)
+        print("** LGT --> Escena creada!")
+
+        # Volvemos a crear la Colision Render Layer
+        createColissionRenderLayer.createColisionTestRenderLayer()
+        mc.file(save=True, f=True)
 
     ########################
     # UTILS ################
