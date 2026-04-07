@@ -297,7 +297,7 @@ def _create_scenes(shot, create_flay=True):
     # Guardamos la escena completa
     mc.file(save=True, f=True)
 
-    print("\t - Escena guardada!")
+    print("\t - Escena guardada!!!!!!!!!!!!!!!!!!!!!")
 
     ##########
     # CAMARA #
@@ -352,7 +352,6 @@ def _create_scenes(shot, create_flay=True):
     print("\t - FRAME RANGE seteado ")
 
     # RENDER SETTINGS
-
     print("\t - RENDER Settings... ")
 
     _set_render_settings()
@@ -482,16 +481,23 @@ def _set_flay_render(final_lay_path):
 
 def _set_render_settings():
 
+    from mtoa.core import createOptions
+    createOptions()
+
     mc.setAttr("defaultRenderGlobals.currentRenderer", "arnold", type="string")
+    print("Arnold setted!")
+
     mc.setAttr("defaultRenderGlobals.imageFilePrefix", "<Scene>/<RenderLayer>/<Scene>_<RenderLayer>", type="string")
     mc.setAttr("defaultRenderGlobals.imageFormat", 40)  # 40 = EXR
     mc.setAttr("defaultArnoldDriver.exrCompression", 2)  # 2 = zips / 3 = zip
     mc.setAttr("defaultArnoldDriver.halfPrecision", True)
     mc.setAttr("defaultArnoldDriver.tiled", False)
     mc.setAttr("defaultArnoldDriver.mergeAOVs", True)
+    print("Arnold settings done")
 
     # Hacemos que no se renderice PERSP
     mc.setAttr("perspShape.renderable", 0)
+    print("PERSP cam not renderable")
 
     width = 2048
     height = 870
@@ -502,12 +508,14 @@ def _set_render_settings():
     mc.setAttr("defaultResolution.height", height)
     mc.setAttr("defaultResolution.pixelAspect", pixel_aspect)
     mc.setAttr("defaultResolution.deviceAspectRatio", device_aspect)
+    print("Resolution setted!")
 
     # Arnold Settings
     mc.setAttr("defaultArnoldRenderOptions.autotx", 0)
     mc.setAttr("defaultArnoldRenderOptions.textureMaxMemoryMB", 24096)
 
     _clear_imagers()
+    print("Imagers cleared")
 
 
 def _clear_imagers():
