@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.7] - 2026-04-07
+
+   - Add  `./utils /createLightingScenes.py` to standalone create LGT v001 scenes.
+
+
+## [1.1.6] - 2026-04-01
+
+   - Creamos la carpeta de `./flay` y movemos allí los scripts `sendFlayRender.py` y `sendFlaytoDeadline.py`
+      - Conservamos `sendFlayRender.py` en utils temporalmente porque los jobs que ya están lanzados usan ese...
+
+   - Fixes en la creación de las escenas de Lighting:
+      - Reconnect shaders ahora llama a la función del módulo `reconnect_shaders`
+      - Nueva función para render settings
+      - ...
+
+   - PUBLISHER:
+      - Añadimos Publisher de FLAY
+
+
 ## [1.1.5] - 2026-02-16
 
    - ANIM PUBLISHER:

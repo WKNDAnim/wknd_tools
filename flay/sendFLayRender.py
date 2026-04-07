@@ -13,10 +13,10 @@ try:
     import maya.standalone
     maya.standalone.initialize(name='python')
     import maya.cmds as mc
+
+    mc.loadPlugin("AbcImport")
 except:
     pass
-
-mc.loadPlugin("AbcImport")
 
 import wknd_tools
 from wknd_tools.utils import json_set, createColissionRenderLayer, reconnect_shaders
@@ -297,7 +297,7 @@ def _create_scenes(shot, create_flay=True):
     # Guardamos la escena completa
     mc.file(save=True, f=True)
 
-    print("\t - Escena guardada!")
+    print("\t - Escena guardada!!!!!!!!!!!!!!!!!!!!!")
 
     ##########
     # CAMARA #
@@ -344,9 +344,7 @@ def _create_scenes(shot, create_flay=True):
     filters_shot = [
         ["code", "is", shot["code"]],
         ]
-
     queries_shot = ["sg_cut_duration", "sg_cut_in", "sg_cut_out"]
-
     shot_info = sg.find_one("Shot", filters_shot, queries_shot)
 
     mc.playbackOptions(minTime=shot_info["sg_cut_in"], maxTime=shot_info["sg_cut_out"], animationStartTime=shot_info["sg_cut_in"], animationEndTime=shot_info["sg_cut_out"])
@@ -354,7 +352,6 @@ def _create_scenes(shot, create_flay=True):
     print("\t - FRAME RANGE seteado ")
 
     # RENDER SETTINGS
-
     print("\t - RENDER Settings... ")
 
     _set_render_settings()
@@ -442,6 +439,7 @@ def _create_scenes(shot, create_flay=True):
             camera=f"|CAMERA{camera_top}",
             renderer="arnold",
             output_path=render_root_path,
+            version=lay_fields["version"]
         )
 
         # print(result["render_job_id"])
@@ -483,18 +481,23 @@ def _set_flay_render(final_lay_path):
 
 def _set_render_settings():
 
-    print("\t\t - Setting Render")
+    from mtoa.core import createOptions
+    createOptions()
 
     mc.setAttr("defaultRenderGlobals.currentRenderer", "arnold", type="string")
+    print("Arnold setted!")
+
     mc.setAttr("defaultRenderGlobals.imageFilePrefix", "<Scene>/<RenderLayer>/<Scene>_<RenderLayer>", type="string")
     mc.setAttr("defaultRenderGlobals.imageFormat", 40)  # 40 = EXR
     mc.setAttr("defaultArnoldDriver.exrCompression", 2)  # 2 = zips / 3 = zip
     mc.setAttr("defaultArnoldDriver.halfPrecision", True)
     mc.setAttr("defaultArnoldDriver.tiled", False)
     mc.setAttr("defaultArnoldDriver.mergeAOVs", True)
+    print("Arnold settings done")
 
     # Hacemos que no se renderice PERSP
     mc.setAttr("perspShape.renderable", 0)
+    print("PERSP cam not renderable")
 
     width = 2048
     height = 870
@@ -505,12 +508,14 @@ def _set_render_settings():
     mc.setAttr("defaultResolution.height", height)
     mc.setAttr("defaultResolution.pixelAspect", pixel_aspect)
     mc.setAttr("defaultResolution.deviceAspectRatio", device_aspect)
+    print("Resolution setted!")
 
     # Arnold Settings
     mc.setAttr("defaultArnoldRenderOptions.autotx", 0)
     mc.setAttr("defaultArnoldRenderOptions.textureMaxMemoryMB", 24096)
 
     _clear_imagers()
+    print("Imagers cleared")
 
 
 def _clear_imagers():
@@ -714,6 +719,7 @@ def submit_post_job(
     priority: int = 60,
     batch_name: str = "",
     extra_args: str = "",
+    job_name="Render_QT"
 ):
 
     if not os.path.exists(MAYAPY):
@@ -724,7 +730,7 @@ def submit_post_job(
 
     job_info_lines = [
         "Plugin=CommandLine",
-        f"Name=RenderQT_{shot_name}",
+        f"Name={job_name}",
         "Comment=Quicktime + ShotGrid publish",
         f"Pool={pool}",
         f"Group={group}",
@@ -760,12 +766,13 @@ def submit_render_and_post_job(
     renderer: str = "arnold",
     output_path: str = "",
     project_path: str = "",
+    version=1
 ):
     batch_name = f"{shot_name}_FLAY_Render"
 
     render_job_id, render_stdout = submit_mayabatch_render_job(
         scene_path=scene_path,
-        job_name=f"{shot_name}_FLAY",
+        job_name=f"{shot_name}_FLAY_v{version:03d}",
         frames=frames,
         maya_version=maya_version,
         pool=pool,
@@ -788,6 +795,7 @@ def submit_render_and_post_job(
         group=group,
         priority=priority + 1,
         batch_name=batch_name,
+        job_name=f"RenderQT_{shot_name}_v{version:03d}"
     )
 
     return {
