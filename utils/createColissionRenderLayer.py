@@ -1,6 +1,8 @@
 import maya.app.renderSetup.model.renderSetup as rs
+import maya.app.renderSetup.model.renderLayer as renderLayer
 import maya.app.renderSetup.model.override as override
 import maya.cmds as cmds
+
 
 def createColisionTestRenderLayer():
 
@@ -52,13 +54,14 @@ def createColisionTestRenderLayer():
     cmds.setAttr("defaultArnoldDriver.tiled", False)
 
     # Resolución
+    render_scale = 0.5
     width = 2048
     height = 870
     pixel_aspect = 1
     device_aspect = float(width * pixel_aspect) / float(height)
 
-    cmds.setAttr("defaultResolution.width", width)
-    cmds.setAttr("defaultResolution.height", height)
+    cmds.setAttr("defaultResolution.width", width*render_scale)
+    cmds.setAttr("defaultResolution.height", height*render_scale)
     cmds.setAttr("defaultResolution.pixelAspect", pixel_aspect)
     cmds.setAttr("defaultResolution.deviceAspectRatio", device_aspect)
 
@@ -80,4 +83,36 @@ def createColisionTestRenderLayer():
     cmds.setAttr("defaultArnoldRenderOptions.skipLicenseCheck", True)
 
 
+def clear_render_setup_layers():
+    renderSetup = rs.instance()
+    default_layer = renderSetup.getDefaultRenderLayer()
+
+    try:
+        renderSetup.switchToLayer(default_layer)
+    except Exception as e:
+        print(f"Could not switch to default layer first: {e}")
+
+    for layer in list(renderSetup.getRenderLayers()):
+        if layer == default_layer:
+            continue
+
+        try:
+            name = layer.name()
+        except Exception:
+            name = str(layer)
+
+        try:
+            print(f"Deleting Render Setup layer: {name}")
+            renderLayer.delete(layer)
+        except Exception as e:
+            print(f"Could not delete Render Setup layer {name}: {e}")
+
+    try:
+        rs.switchToLayer(default_layer)
+    except Exception as e:
+        print(f"Could not switch back to default layer: {e}")
+
+
 # createColisionTestRenderLayer()
+
+# clear_render_setup_layers()

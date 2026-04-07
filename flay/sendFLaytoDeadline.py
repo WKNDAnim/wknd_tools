@@ -21,8 +21,8 @@ from PySide6 import QtWidgets
 DEADLINECOMMAND = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 MAYAPY = r"C:\Program Files\Autodesk\Maya2026\bin\mayapy.exe"
 
-RENDER_SCRIPT = os.path.join(os.path.dirname(__file__), "sendFlayRender.py")
-PREP_SCRIPT = os.path.join(os.path.dirname(__file__), "setAutoExporter.py")
+LAUNCH_RENDER_SCRIPT = os.path.join(os.path.dirname(__file__), "sendFlayRender.py")
+PREP_JSON_SCRIPT = os.path.join(os.path.dirname(os.path.dirname(__file__)), r"utils\setAutoExporter.py")
 
 POOL = "none"
 GROUP = "none"
@@ -31,6 +31,7 @@ PRIORITY = 50
 ####################
 # GET INFO FROM SG #
 ####################
+
 
 def _get_seqs_from_sg():
 
@@ -45,8 +46,14 @@ def _get_seqs_from_sg():
     # Filtramos los shots que ya han sido procesados
     shots = [s for s in shots if not s.get("sg_set_json_exported") or not s.get("sg_auto_flay")]
 
+    if not shots:
+        return ["No quedan shots para procesar :)"]
+
     # Nos quedamos solo con shots que tengan secuencia asignada
     shots = [s for s in shots if s.get("sg_sequence")]
+
+    if not shots:
+        return ["No hay shots con secuencias para procesar :)"]
 
     shot_ids = [s["id"] for s in shots]
 
@@ -124,73 +131,15 @@ def _get_seqs_from_sg():
 ###################
 
 def submit_prepare_job(sequence_name: str) -> str:
-    """
-    Envía a Deadline un job CommandLine que ejecuta mayapy
-    con un script fijo y solo le pasa la secuencia.
-    """
-
-    # if not os.path.exists(DEADLINECOMMAND):
-    #     raise FileNotFoundError(f"No existe deadlinecommand: {DEADLINECOMMAND}")
-
-    # if not os.path.exists(MAYAPY):
-    #     raise FileNotFoundError(f"No existe mayapy: {MAYAPY}")
-
-    if not os.path.exists(PREP_SCRIPT):
-        raise FileNotFoundError(f"No existe el script: {PREP_SCRIPT}")
-
-    job_info_lines = [
-        "Plugin=CommandLine",
-        f"Name=Prepare_FLAY_{sequence_name}",
-        "Comment=Job lanzado desde interfaz de producción",
-        f"Pool={POOL}",
-        f"Group={GROUP}",
-        "Priority=60",
-        "Frames=0",
-        "ChunkSize=1",
-    ]
-
-    plugin_info_lines = [
-        f"Executable={MAYAPY}",
-        f'Arguments="{PREP_SCRIPT}" "{sequence_name}"',
-    ]
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        job_info_path = os.path.join(tmpdir, "job_info.job")
-        plugin_info_path = os.path.join(tmpdir, "plugin_info.job")
-
-        with open(job_info_path, "w", encoding="utf-8") as f:
-            f.write("\n".join(job_info_lines))
-
-        with open(plugin_info_path, "w", encoding="utf-8") as f:
-            f.write("\n".join(plugin_info_lines))
-
-        result = subprocess.run(
-            [DEADLINECOMMAND, job_info_path, plugin_info_path],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-        if result.returncode != 0:
-            raise RuntimeError(
-                f"Error enviando job para {sequence_name}\n"
-                f"STDOUT:\n{result.stdout}\n\n"
-                f"STDERR:\n{result.stderr}"
-            )
-
-        return result.stdout
-
-
-def submit_prepare_job(sequence_name: str) -> str:
 
     # if not os.path.exists(DEADLINECOMMAND):
     #     raise FileNotFoundError(f"No existe deadlinecommand: {DEADLINECOMMAND}")
     # if not os.path.exists(MAYAPY):
     #     raise FileNotFoundError(f"No existe mayapy: {MAYAPY}")
-    if not os.path.exists(PREP_SCRIPT):
-        raise FileNotFoundError(f"No existe el script: {PREP_SCRIPT}")
-    if not os.path.exists(RENDER_SCRIPT):
-        raise FileNotFoundError(f"No existe el script: {RENDER_SCRIPT}")
+    if not os.path.exists(PREP_JSON_SCRIPT):
+        raise FileNotFoundError(f"No existe el script: {PREP_JSON_SCRIPT}")
+    if not os.path.exists(LAUNCH_RENDER_SCRIPT):
+        raise FileNotFoundError(f"No existe el script: {LAUNCH_RENDER_SCRIPT}")
 
     def submit(job_name, script_path, dependency=None):
 
@@ -242,8 +191,8 @@ def submit_prepare_job(sequence_name: str) -> str:
 
             return result.stdout, match.group(1)
 
-    out1, job1_id = submit(f"Create_JSON - {sequence_name}", PREP_SCRIPT)
-    out2, _ = submit(f"Launch RENDER_FLAY - {sequence_name}", RENDER_SCRIPT, dependency=job1_id)
+    out1, job1_id = submit(f"Create_JSON - {sequence_name}", PREP_JSON_SCRIPT)
+    out2, _ = submit(f"Launch RENDER_FLAY - {sequence_name}", LAUNCH_RENDER_SCRIPT, dependency=job1_id)
 
     return f"{out1}\n{out2}"
 
@@ -294,7 +243,7 @@ class ProductionLauncher(QtWidgets.QWidget):
                 "Selecciona al menos una secuencia."
             )
             return
-        
+
         reply = QtWidgets.QMessageBox.question(
             self,
             "Confirmar envío",
