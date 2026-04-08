@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.8] - 2026-04-08
+
+   - Añadimos argumentos a la función `sendFLayRender.submit_render_and_post_job()`:
+      - version --> para la gestion de la versión del render y la escena
+      - description --> Descripción de la versión
+      - auto --> BOOL -> marca si se ha lanzado de forma automática o desde un publish manual
+
 ## [1.1.7] - 2026-04-07
 
    - Add  `./utils /createLightingScenes.py` to standalone create LGT v001 scenes.
