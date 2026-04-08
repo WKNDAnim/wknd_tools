@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.9] - 2026-04-08
+
+   - Publish FLAY:
+      - Borramos la versión que se crea con el Publish normal para crearla desde Deadline.
+         ** Esto se puede mejorar pasando la versión como parámetro
+
+   - Render_qt_and_publish:
+      -Faltaba pasar el argumento `auto` a publish()
+
+
 ## [1.1.8] - 2026-04-08
 
    - Añadimos argumentos a la función `sendFLayRender.submit_render_and_post_job()`:
