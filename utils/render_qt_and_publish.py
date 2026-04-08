@@ -25,7 +25,7 @@ sg = tk.shotgun
 ##################################################
 
 
-def publish(shot_name):
+def publish(shot_name, version_num, description, auto=True):
 
     task = sg.find_one("Task",
                        [["entity.Shot.code", "is", shot_name], ["content", "is", "FLay"]],
@@ -37,8 +37,11 @@ def publish(shot_name):
         "name": "scene",
         "Shot": shot_name,
         "Sequence": task["entity.Shot.sg_sequence"]["name"],
-        "version": 1
+        "version": int(version_num)
     }
+
+    print("-"*70)
+    print(fields)
 
     # Get templates
     template_work = tk.templates["maya_shot_work"]
@@ -51,7 +54,7 @@ def publish(shot_name):
     version_movie_path = template_movie.apply_fields(fields)
 
     context = tk.context_from_entity("Task", task["id"])
-    description = "Publish from auto FLAY to review"
+    description = description
     version_name = os.path.splitext(os.path.basename(version_movie_path))[0]
 
     print(f"\t - VERSION NAME --> {version_name}")
@@ -92,6 +95,15 @@ def publish(shot_name):
         sys.exit(1)
 
     print("- Uploading video...")
+
+    # Decidimos el nuevo status dependiendo de donde venga el job
+    if auto:
+        new_status = "psr"
+    else:
+        new_status = "pdr"
+
+    print(f"INFO --> AUTO: {auto} --> New status: {new_status}")
+
     if output_video:
 
         version_id = version['id']
@@ -100,7 +112,7 @@ def publish(shot_name):
         # Upload File
         sg.upload('Version', version_id, video_path, 'sg_uploaded_movie')
         # Update Version Path
-        sg.update('Version', version_id, {'sg_path_to_movie': video_path})
+        sg.update('Version', version_id, {'sg_path_to_movie': video_path, "sg_status_list": new_status})
 
         print("- Video Uploaded\n")
 
@@ -109,18 +121,19 @@ def publish(shot_name):
         print("ERROR: Cannot upload movie to SG...\n")
         sys.exit(1)
 
-    fields["version"] = 2
+    fields["version"] = int(version_num) + 1
     scene_path_new = template_work.apply_fields(fields)
     print(f"INFO --> Incrementing scene version... ({scene_path_new})")
     shutil.copy2(scene_path, scene_path_new)
 
-    print("INFO --> Updating task status to PSR")
+    print("INFO --> Updating task status")
 
-    # Cambiamos el status de la task FLAY a Pending Sup Review
+    # Cambiamos el status de la task FLAY
+    changes = {"sg_status_list": new_status}
     sg.update(
         "Task",
         task["id"],
-        {"sg_status_list": "psr"}
+        changes
         )
 
 
@@ -130,11 +143,15 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--shot", required=True)
+    parser.add_argument("--version", required=True)
+    parser.add_argument("--description", required=True)
+    parser.add_argument("--auto", required=True)
     args = parser.parse_args()
 
-    print(f"[POST] SHOT: {args.shot}", flush=True)
+    print(f"[POST] SHOT: {args.shot} - VERSION: {args.version}", flush=True)
+    print(f"[POST] DESCRIPTION: {args.description}", flush=True)
 
-    publish(args.shot)
+    publish(args.shot, args.version, args.description)
 
     print("Version created and movie DONE! :)")
 
