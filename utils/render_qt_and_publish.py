@@ -99,8 +99,9 @@ def publish(shot_name, version_num, description, auto=True):
     # Decidimos el nuevo status dependiendo de donde venga el job
     if auto:
         new_status = "psr"
+        new_status_version = "rev"
     else:
-        new_status = "pdr"
+        new_status = new_status_version = "pdr"
 
     print(f"INFO --> AUTO: {auto} --> New status: {new_status}")
 
@@ -112,7 +113,7 @@ def publish(shot_name, version_num, description, auto=True):
         # Upload File
         sg.upload('Version', version_id, video_path, 'sg_uploaded_movie')
         # Update Version Path
-        sg.update('Version', version_id, {'sg_path_to_movie': video_path, "sg_status_list": new_status})
+        sg.update('Version', version_id, {'sg_path_to_movie': video_path, "sg_status_list": new_status_version})
 
         print("- Video Uploaded\n")
 
@@ -150,8 +151,9 @@ def main():
 
     print(f"[POST] SHOT: {args.shot} - VERSION: {args.version}", flush=True)
     print(f"[POST] DESCRIPTION: {args.description}", flush=True)
+    print(f"[POST] AUTO: {args.auto}", flush=True)
 
-    publish(args.shot, args.version, args.description)
+    publish(args.shot, args.version, args.description, auto=args.auto)
 
     print("Version created and movie DONE! :)")
 
