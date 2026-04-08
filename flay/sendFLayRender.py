@@ -682,31 +682,6 @@ def submit_mayabatch_render_job(
     if project_path:
         plugin_info_lines.append(f"ProjectPath={project_path}")
 
-    # with tempfile.TemporaryDirectory() as tmpdir:
-    #     job_info_path = os.path.join(tmpdir, "job_info.job")
-    #     plugin_info_path = os.path.join(tmpdir, "plugin_info.job")
-
-    #     with open(job_info_path, "w", encoding="utf-8") as f:
-    #         f.write("\n".join(job_info_lines))
-
-    #     with open(plugin_info_path, "w", encoding="utf-8") as f:
-    #         f.write("\n".join(plugin_info_lines))
-
-    #     result = subprocess.run(
-    #         [deadlinecommand, job_info_path, plugin_info_path],
-    #         capture_output=True,
-    #         text=True,
-    #         check=False,
-    #     )
-
-    #     if result.returncode != 0:
-    #         raise RuntimeError(
-    #             "Error al enviar el job MayaBatch a Deadline.\n"
-    #             f"STDOUT:\n{result.stdout}\n\n"
-    #             f"STDERR:\n{result.stderr}"
-    #         )
-
-    #     return result.stdout
     return submit_deadline_job(job_info_lines, plugin_info_lines)
 
 
@@ -718,8 +693,10 @@ def submit_post_job(
     group: str = "none",
     priority: int = 60,
     batch_name: str = "",
-    extra_args: str = "",
-    job_name="Render_QT"
+    job_name="Render_QT",
+    version=1,
+    description="Publish from auto FLAY to review",
+    auto=True
 ):
 
     if not os.path.exists(MAYAPY):
@@ -745,7 +722,7 @@ def submit_post_job(
 
     plugin_info_lines = [
         f"Executable={MAYAPY}",
-        f'Arguments="{script_path}" --shot "{shot_name}" {extra_args}'.strip(),
+        f'Arguments="{script_path}" --shot "{shot_name}" --version "{version}" --description "{description}" --auto "{auto}"'.strip(),
     ]
 
     return submit_deadline_job(job_info_lines, plugin_info_lines)
@@ -766,7 +743,9 @@ def submit_render_and_post_job(
     renderer: str = "arnold",
     output_path: str = "",
     project_path: str = "",
-    version=1
+    version=1,
+    description="Publish from auto FLAY to review",
+    auto=True
 ):
     batch_name = f"{shot_name}_FLAY_Render"
 
@@ -795,7 +774,10 @@ def submit_render_and_post_job(
         group=group,
         priority=priority + 1,
         batch_name=batch_name,
-        job_name=f"RenderQT_{shot_name}_v{version:03d}"
+        job_name=f"RenderQT_{shot_name}_v{version:03d}",
+        version=version,
+        description=description,
+        auto=auto
     )
 
     return {

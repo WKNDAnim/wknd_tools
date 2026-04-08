@@ -173,7 +173,7 @@ class Publisher:
         elif self.context.task['name'] == 'FLay':
 
             self._create_lgt_from_flay()
-            return
+            # return
 
         # LIGHTING
         elif self.context.task['name'] == 'Lighting':
@@ -200,60 +200,62 @@ class Publisher:
         import importlib
         importlib.reload(playblast_tool)
 
-        # Playblast
-        if self.use_playblast:
+        if self.context.task['name'] != 'FLay':
 
-            self.log(f"INFO ---> Capturing playblast: {self.version_movie_path} \n")
+            # Playblast
+            if self.use_playblast:
 
-            if self.context.step['name'] in ['Layout', 'Animation']:
+                self.log(f"INFO ---> Capturing playblast: {self.version_movie_path} \n")
 
-                if self.context.task["name"].lower() == "previs":
+                if self.context.step['name'] in ['Layout', 'Animation']:
 
-                    # if we are in layout, we need to publish full sequence
-                    output_video = playblast_tool.create_sequence_playblast(self.version_movie_path)
+                    if self.context.task["name"].lower() == "previs":
+
+                        # if we are in layout, we need to publish full sequence
+                        output_video = playblast_tool.create_sequence_playblast(self.version_movie_path)
+
+                    else:
+
+                        # Obtener el control del timeline (gPlayBackSlider)
+                        gPlayBackSlider = mel.eval('$tmpVar = $gPlayBackSlider')
+
+                        # Obtenemos el sonido del timeline
+                        sound_node = mc.timeControl(gPlayBackSlider, q=True, sound=True)
+
+                        if not sound_node:
+                            sound_node = "trax"
+
+                        # If we are in a single Shot, publish regular playblast
+                        output_video = playblast_tool.create_playblast(self.version_movie_path, sound=sound_node, log=self.log)
 
                 else:
 
-                    # Obtener el control del timeline (gPlayBackSlider)
-                    gPlayBackSlider = mel.eval('$tmpVar = $gPlayBackSlider')
+                    output_video = playblast_tool.create_playblast(self.version_movie_path) # in every other case, we just need a playblast from the shot, plabackOptions define frame range
 
-                    # Obtenemos el sonido del timeline
-                    sound_node = mc.timeControl(gPlayBackSlider, q=True, sound=True)
-
-                    if not sound_node:
-                        sound_node = "trax"
-
-                    # If we are in a single Shot, publish regular playblast
-                    output_video = playblast_tool.create_playblast(self.version_movie_path, sound=sound_node, log=self.log)
-
-            else:
-
-                output_video = playblast_tool.create_playblast(self.version_movie_path) # in every other case, we just need a playblast from the shot, plabackOptions define frame range
-
-            if output_video:
-
-                self.log("Uploading video ---------------\n")
-
-                version_core.upload_video(self.version['id'], output_video)
-
-                self.log("✓ Video Thumbnail Uploaded\n")
-
-        # Render
-        else:
-
-            try:
-                self.log("Creating movie from folder images...")
-
-                output_video = playblast_tool.create_movie_from_folder(self.media_folder, output_path=self.version_movie_path)
                 if output_video:
 
-                    self.log("Uploading video...")
+                    self.log("Uploading video ---------------\n")
 
                     version_core.upload_video(self.version['id'], output_video)
 
                     self.log("✓ Video Thumbnail Uploaded\n")
-            except:
-                output_video = False
+
+            # Render
+            else:
+
+                try:
+                    self.log("Creating movie from folder images...")
+
+                    output_video = playblast_tool.create_movie_from_folder(self.media_folder, output_path=self.version_movie_path)
+                    if output_video:
+
+                        self.log("Uploading video...")
+
+                        version_core.upload_video(self.version['id'], output_video)
+
+                        self.log("✓ Video Thumbnail Uploaded\n")
+                except:
+                    output_video = False
 
         ####################
         # Version up Scene #
@@ -487,6 +489,9 @@ class Publisher:
             camera=f"|CAMERA|{camera_top}",
             renderer="arnold",
             output_path=render_root_path,
+            version=int(fields_flay["version"]),
+            description=self.description,
+            auto=False
         )
 
         # print(result["render_job_id"])
