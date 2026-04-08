@@ -173,6 +173,8 @@ class Publisher:
         elif self.context.task['name'] == 'FLay':
 
             self._create_lgt_from_flay()
+            self.sg.delete("Version", self.version["id"])
+            self.log("✓ Version cleaned as we are in FLAY\n")
             # return
 
         # LIGHTING
@@ -493,9 +495,6 @@ class Publisher:
             description=self.description,
             auto=False
         )
-
-        # print(result["render_job_id"])
-        # print(result["post_job_id"])
 
         print("- Job lanzado ")
 
