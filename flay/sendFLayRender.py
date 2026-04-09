@@ -696,7 +696,8 @@ def submit_post_job(
     job_name="Render_QT",
     version=1,
     description="Publish from auto FLAY to review",
-    auto=True
+    auto=True,
+    sg_version=False
 ):
 
     if not os.path.exists(MAYAPY):
@@ -722,7 +723,7 @@ def submit_post_job(
 
     plugin_info_lines = [
         f"Executable={MAYAPY}",
-        f'Arguments="{script_path}" --shot "{shot_name}" --version "{version}" --description "{description}" --auto "{auto}"'.strip(),
+        f'Arguments="{script_path}" --shot "{shot_name}" --version "{version}" --description "{description}" --auto "{auto}" --sg_version "{sg_version}"'.strip(),
     ]
 
     return submit_deadline_job(job_info_lines, plugin_info_lines)
@@ -745,7 +746,8 @@ def submit_render_and_post_job(
     project_path: str = "",
     version=1,
     description="Publish from auto FLAY to review",
-    auto=True
+    auto=True,
+    sg_version=False
 ):
     batch_name = f"{shot_name}_FLAY_Render"
 
@@ -777,7 +779,8 @@ def submit_render_and_post_job(
         job_name=f"RenderQT_{shot_name}_v{version:03d}",
         version=version,
         description=description,
-        auto=auto
+        auto=auto,
+        sg_version=sg_version
     )
 
     return {

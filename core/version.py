@@ -24,6 +24,20 @@ def create_version(context, version_name, description="", sg=None):
     if not context.task:
         raise ValueError("No task in context")
 
+    def fix_surrogate_text(text: str) -> str:
+        if not isinstance(text, str):
+            return text
+        try:
+            return text.encode("utf-8", "surrogateescape").decode("cp1252")
+        except Exception:
+            return text
+
+    print(f"DESCRIPTION FIXED: {description}")
+    print(f"DESCRIPTION FIXED REPR: {description!r}")
+    description = fix_surrogate_text(description)
+    print(f"DESCRIPTION FIXED: {description}")
+    print(f"DESCRIPTION FIXED REPR: {description!r}")
+
     version_data = {
         'project': context.project,
         'entity': context.entity,
@@ -32,6 +46,8 @@ def create_version(context, version_name, description="", sg=None):
         'sg_status_list': 'rev',
         'description': description or f"Published version {version_name}"
     }
+
+    print(version_data)
 
     if context.user:
         version_data['user'] = context.user
