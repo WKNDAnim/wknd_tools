@@ -18,7 +18,7 @@ except ImportError:
     from shiboken2 import wrapInstance
     from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
-ALLOW_SELECTED = ["cpuigdollers", "aferraz", "jmartinez"]
+ALLOW_SELECTED = ["cpuigdollers", "aferraz", "jmartinez", "rmadrid"]
 # ALLOW_SELECTED = ["cpuigdollers", "jmartinez"]
 USER = os.getlogin()
 
@@ -290,8 +290,8 @@ class AnimPubUI(MayaQWidgetDockableMixin, qt.QWidget):
                     mergeNamespacesOnClash=False,
                     namespace=f"exported_{p}",
                 )
-                warn = "The exported abc files have been referenced in the scene, please check all is fine before continue :)"
-                mc.confirmDialog(title='Finishing...', message=warn, button=['Okay'])
+            warn = "The exported abc files have been referenced in the scene, please check all is fine before continue :)"
+            mc.confirmDialog(title='Finishing...', message=warn, button=['Okay'])
 
             self.publish_btn.setText(msg)
 
