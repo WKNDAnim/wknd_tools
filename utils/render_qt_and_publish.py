@@ -25,7 +25,7 @@ sg = tk.shotgun
 ##################################################
 
 
-def publish(shot_name, version_num, description, auto=True):
+def publish(shot_name, version_num, description, auto=True, sg_version=False):
 
     task = sg.find_one("Task",
                        [["entity.Shot.code", "is", shot_name], ["content", "is", "FLay"]],
@@ -54,7 +54,7 @@ def publish(shot_name, version_num, description, auto=True):
     version_movie_path = template_movie.apply_fields(fields)
 
     context = tk.context_from_entity("Task", task["id"])
-    description = description
+    # description = description
     version_name = os.path.splitext(os.path.basename(version_movie_path))[0]
 
     print(f"\t - VERSION NAME --> {version_name}")
@@ -63,11 +63,21 @@ def publish(shot_name, version_num, description, auto=True):
     # Create version on SG #
     ########################
 
-    print("Creating Version...")
+    if not sg_version or sg_version == "False":
 
-    version = version_core.create_version(context, version_name, description, sg=sg)
+        print("Creating Version...")
 
-    print(f"Version created: {version['code']}\n")
+        version = version_core.create_version(context, version_name, description, sg=sg)
+
+        print(f"Version created: {version['code']}\n")
+
+    else:
+
+        print("[INFO] Usando la versión heredada del publish...")
+
+        version = sg.find_one("Version", [["id", "is", int(sg_version)]])
+
+        print(f"Version heredada: {version}\n")
 
     #############
     # Render QT #
@@ -147,13 +157,15 @@ def main():
     parser.add_argument("--version", required=True)
     parser.add_argument("--description", required=True)
     parser.add_argument("--auto", required=True)
+    parser.add_argument("--sg_version", required=True)
     args = parser.parse_args()
 
     print(f"[POST] SHOT: {args.shot} - VERSION: {args.version}", flush=True)
     print(f"[POST] DESCRIPTION: {args.description}", flush=True)
     print(f"[POST] AUTO: {args.auto}", flush=True)
+    print(f"[POST] SG VERSION (id): {args.sg_version}", flush=True)
 
-    publish(args.shot, args.version, args.description, auto=args.auto)
+    publish(args.shot, args.version, args.description, auto=bool(args.auto), sg_version=args.sg_version)
 
     print("Version created and movie DONE! :)")
 

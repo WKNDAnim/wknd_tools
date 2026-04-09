@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.10] - 2026-04-09
+
+   - Publish FLAY:
+      - No borramos la versión, pasamos la versión como parámetro!!
+
+   - Añadimos a `rmadrid` para que pueda hacer publish de anim por elemento.
+
 ## [1.1.9] - 2026-04-08
 
    - Publish FLAY:
