@@ -12,20 +12,18 @@ import re
 try:
     import maya.standalone
     maya.standalone.initialize(name='python')
+    import maya.cmds as mc
+
+    mc.loadPlugin("AbcImport")
 except:
     pass
 
-import maya.cmds as mc
-mc.loadPlugin("AbcImport")
-
 import wknd_tools
 from wknd_tools.utils import json_set, createColissionRenderLayer, reconnect_shaders
-from . import fix_escuelaExt
 import importlib
 importlib.reload(json_set)
 importlib.reload(createColissionRenderLayer)
 importlib.reload(reconnect_shaders)
-importlib.reload(fix_escuelaExt)
 
 DEADLINECOMMAND = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 MAYAPY = r"C:\Program Files\Autodesk\Maya2026\bin\mayapy.exe"
@@ -108,7 +106,6 @@ def _search_published_files(shot):
 
     # Get cache files from folder
     anim_cache_files = [os.path.join(anim_cache_folder, file) for file in os.listdir(anim_cache_folder) if os.path.join(anim_cache_folder, file).endswith("abc")]
-    anim_cache_files = [cache for cache in anim_cache_files if "_hair_" not in cache] # Filtramos los HAIR, los cargamos después
 
     if not anim_cache_files:
 
@@ -161,52 +158,146 @@ def _create_scenes(shot, create_flay=True):
 
     print("\t - JSON SET importado ")
 
-    # Fix de setos y vayas en escuelaExt
-    escuelaExt = {'id': 1866, 'name': 'escuelaExt', 'type': 'Asset'}
-
-    sg_shot = sg.find_one("Shot", [["code", "is", shot["code"]]], ["parent_shots"])
-    print(sg_shot)
-    parent_shots = sg.find_one("Shot", [["code", "is", sg_shot["parent_shots"][0]["name"]]], ["assets"])
-    print(parent_shots)
-
-    if escuelaExt in parent_shots["assets"]:
-
-        print("Contiene escuelaExt!!!!!!!!!!!!!!!!!!!!!!")
-        fix_escuelaExt.fix_arbustos_vallas()
-
     # ANIM ############################################
     if anim_cache_files and anim_cache_files != "na":
 
         print("\t - Importando ANIM CACHES...")
-        print("="*70)
-        for i in anim_cache_files:
-            print(i)
-        print("="*30)
 
-        # Creamos el grupo del ANIM si no existe
-        if not transform_exists("ANIM"):
-            mc.group(n="ANIM", em=True)
+        # Creamos el grupo ANIM
+        anim_group = mc.group(n="ANIM", em=True)
+
+        template_anim_cache = tk.templates["maya_shot_anim_assets_abc_publish"]
+        template_hair_cache = tk.templates["maya_shot_anim_assets_abc_hair_publish"]
+        template_shader = tk.templates["maya_asset_shader_publish"]
+        template_groom = tk.templates["maya_asset_clean_publish"]
 
         for cache_path in anim_cache_files:
 
-            load_cache(cache_path)
+            #########
+            # CACHE #
+            #########
+
+            print(f"\t- Procesando: {cache_path}")
+
+            # Miramos si es una cache de HAIR o normal
+            try:
+                cache_fields = template_anim_cache.get_fields(cache_path)
+                asset_name = cache_fields["Asset"]
+            except:
+                cache_fields = False
+
+            try:
+                hair_fields = template_hair_cache.get_fields(cache_path)
+                asset_name = hair_fields["Asset"]
+            except:
+                hair_fields = False
+
+            # Buscamos si hay número de copia
+            copy_n = (cache_fields or hair_fields or {}).get("copyNum", False)
+
+            # En cualquier caso cargamos la cache
+            ref_node = mc.file(cache_path, r=True, ns=f"{asset_name}{copy_n or ''}", referenceNode=True)
+
+            # ref_node = mc.referenceQuery(cache_path, referenceNode=True)
+            new_objects = mc.referenceQuery(ref_node, nodes=True)
+            new_transforms = mc.ls(new_objects, type='transform', long=True)
+            hair_shapes = mc.ls(new_objects, type='mesh')  #, long=True)
+            cache_top = [t for t in new_transforms if not mc.listRelatives(t, parent=True)][0]
+
+            # Hide de los transforms que no necesitamos
+            for t in mc.listRelatives(cache_top, ad=1, c=1, type='transform'):
+                if 'hair' in t.lower() or 'proxy' in t.lower():
+                    mc.setAttr(t + '.v', 0)
+
+            # Lo ponemos en el grupo ANIM
+            mc.parent(cache_top, anim_group)
+
+            print(f"\t- Referenced: {cache_path}")
+
+            ###########
+            # SHADERS #
+            ###########
+
+            if cache_fields:
+
+                print("\t\t- Buscando shader...")
+
+                shader_fields = {
+                    "Asset": asset_name,
+                    "Step": "SURF",
+                    "Task": "Shading",
+                    "name": "scene"
+                    }
+                shader_paths = tk.paths_from_template(template_shader, shader_fields)
+                shader_paths.sort(reverse=True)
+
+                mc.file(shader_paths[0], r=True)
+
+            ############
+            # GROOMING #
+            ############
+
+            if hair_fields:
+
+                print("\t\t- Buscando pelo...")
+
+                groom_fields = {
+                    "Asset": asset_name,
+                    "Step": "GROOM",
+                    "Task": "Groom",
+                    "name": "scene"
+                    }
+
+                groom_paths = tk.paths_from_template(template_groom, groom_fields)
+                groom_paths.sort(reverse=True)
+
+                print(groom_paths)
+
+                ref_node = mc.file(groom_paths[0], r=True, ns=f"{asset_name}{copy_n or ''}", referenceNode=True)
+
+                print("\t\t- Pelo referenciado")
+
+                # ref_node = mc.referenceQuery(groom_paths[0], referenceNode=True)
+                print(f"1 --> {ref_node}")
+                new_objects = mc.referenceQuery(ref_node, nodes=True)
+                print(f"2 --> {new_objects}")
+                new_transforms = mc.ls(new_objects, type='transform', long=True)
+                print(f"3 --> {new_transforms}")
+                groom_shapes = mc.ls(new_objects, type='mesh') #, long=True)
+                print(f"4 --> {groom_shapes}")
+                hair_top = [t for t in new_transforms if not mc.listRelatives(t, parent=True)][0]
+                print(f"5 --> {hair_top}")
+
+                print("\t\t- Pelo importado")
+
+                # Hide de las meshes que no necesitamos
+                for t in mc.listRelatives(hair_top , ad=1, c=1, type='mesh'):
+                    parent = mc.listRelatives(t, p=1)[0]
+                    mc.setAttr(parent + '.v', 0)
+
+                # Lo ponemos en el grupo ANIM
+                mc.parent(hair_top, anim_group)
+
+                print(f"\t\t\t- HAIR SHAPE --> {hair_shapes[0]}")
+                print(f"\t\t\t- GROOM SHAPE --> {groom_shapes[0]}")
+
+                # Conectamos el out_mesh del hair al in_mesh del groom
+                mc.connectAttr(f"{hair_shapes[0]}.outMesh", f"{groom_shapes[0]}.inMesh")
+
+                print("\t\t- Pelo conectado a su geo!")
 
         print("\t - ANIM CACHES importadas ")
 
-    #####################
-    # RECONNECT SHADERS #
-    #####################
+        print("\t - Reconectando shaders...")
 
-    print("\t - Reconectando shaders...")
+        reconnect_shaders._reconnect_shaders()
 
-    reconnect_shaders._reconnect_shaders()
-
-    print("\t - Shaders conectados! ")
+        print("\t - Shaders conectados! ")
 
     # Guardamos la escena completa
     mc.file(save=True, f=True)
 
-    print("\t - Escena guardada!!")
+    print("\t - Escena guardada!!!!!!!!!!!!!!!!!!!!!")
 
     ##########
     # CAMARA #
@@ -230,10 +321,10 @@ def _create_scenes(shot, create_flay=True):
 
     print(f"CAMERA PATHS --> {camera_paths}")
 
-    ref_node = mc.file(camera_paths[0], r=True)
+    ref_node = mc.file(camera_paths[0], r=True, referenceNode=True)
     camera_group = mc.group(n="CAMERA", em=True)
 
-    # ref_node = mc.referenceQuery(camera_paths[0])
+    # ref_node = mc.referenceQuery(camera_paths[0], referenceNode=True)
     new_objects = mc.referenceQuery(ref_node, nodes=True)
     new_transforms = mc.ls(new_objects, type='transform', long=True)
     camera_top = [t for t in new_transforms if not mc.listRelatives(t, parent=True)][0]
@@ -700,212 +791,6 @@ def submit_render_and_post_job(
     }
 
 
-def transform_exists(node):
-
-    if not mc.objExists(node):
-        return False
-
-    try:
-        return mc.nodeType(node) == "transform"
-    except:
-        return False
-
-
-def is_file_referenced(file_path):
-
-    file_path = os.path.normpath(file_path)
-
-    refs = mc.file(q=True, reference=True) or []
-
-    for ref in refs:
-        ref_norm = os.path.normpath(ref)
-        if ref_norm == file_path:
-            return True
-
-    return False
-
-
-def is_arnes_visible(cache_top):
-
-    b = mc.listRelatives(cache_top, fullPath=True, type="transform")
-    c = mc.listRelatives(b, fullPath=True, type="transform")
-    x = [i for i in c if "arnes_C_grp" in i]
-
-    return mc.getAttr(f"{x[0]}.v")
-
-
-def load_shaders(asset_name):
-
-    template_shader = tk.templates["maya_asset_shader_publish"]
-
-    print("\t\t- Buscando shader...")
-
-    shader_fields = {
-        "Asset": asset_name,
-        "Step": "SURF",
-        "Task": "Shading",
-        "name": "scene"
-        }
-    shader_paths = tk.paths_from_template(template_shader, shader_fields)
-    shader_paths.sort(reverse=True)
-
-    if not is_file_referenced(shader_paths[0]):
-        mc.file(shader_paths[0], r=True)
-        print(f"\t\t\t - Referenciamos el shader: {shader_paths[0]}")
-    else:
-        print("\t\t\t - El Shader ya está en la escena.")
-
-
-def load_ch_from_geo(cache_top, asset_name, cache_fields):
-
-    template_hair_cache = tk.templates["maya_shot_anim_assets_abc_hair_publish"]
-    template_groom = tk.templates["maya_asset_clean_publish"]
-
-    ########
-    # HAIR #
-    ########
-
-    try:
-        hair_path = template_hair_cache.apply_fields(cache_fields)
-    except:
-        hair_path = False
-
-    print(f"HAIR PATHHHHH --> {hair_path} =================")
-
-    if os.path.exists(hair_path):
-
-        # CARGAMOS LA GEO DEL HAIR
-
-        ref_node_h = mc.file(hair_path, r=True)
-        new_objects_h = mc.referenceQuery(ref_node_h, nodes=True)
-        new_transforms_h = mc.ls(new_objects_h, type='transform', long=True)
-        hair_shapes = mc.ls(new_objects_h, type='mesh')
-        cache_top_h = [t for t in new_transforms_h if not mc.listRelatives(t, parent=True)][0]
-
-        print("\t\t- Geo de HAIR cargada :)")
-
-        # CARGAMOS GROOM
-
-        print("\t\t- Buscando pelo...")
-
-        # Miramos si el arnes está visible
-        print("\t\t\t- Miramos si el arnes está visible...")
-
-        arnes = is_arnes_visible(cache_top)
-
-        print(f"\t\t\t\t-ARNES VISIBLE --> {arnes}")
-
-        groom_fields = {
-            "Asset": asset_name,
-            "Step": "GROOM",
-            "Task": "Groom",
-            "name": "arnes" if arnes else "scene"
-            }
-
-        groom_paths = tk.paths_from_template(template_groom, groom_fields)
-        groom_paths.sort(reverse=True)
-
-        print(groom_paths)
-        
-        ref_node_g = mc.file(groom_paths[0], r=True, ns=f"{asset_name}")  # {copy_n or ''}")
-
-        print("\t\t- Pelo referenciado")
-
-        # ref_node = mc.referenceQuery(groom_paths[0])
-        new_objects_g = mc.referenceQuery(ref_node_g, nodes=True)
-        new_transforms_g = mc.ls(new_objects_g, type='transform', long=True)
-        groom_shapes = mc.ls(new_objects_g, type='mesh') #, long=True)
-        cache_top_g = [t for t in new_transforms_g if not mc.listRelatives(t, parent=True)][0]
-        
-        # Hide de las meshes que no necesitamos
-        for t in mc.listRelatives(cache_top_g , ad=1, c=1, type='mesh'):
-            parent = mc.listRelatives(t, p=1)[0]
-            mc.setAttr(parent + '.v', 0)
-
-        print(f"\t\t\t- HAIR SHAPE --> {hair_shapes[0]}")
-        print(f"\t\t\t- GROOM SHAPE --> {groom_shapes[0]}")
-
-        # Conectamos el out_mesh del hair al in_mesh del groom
-        mc.connectAttr(f"{hair_shapes[0]}.outMesh", f"{groom_shapes[0]}.inMesh")
-
-        print("\t\t- Pelo conectado a su geo!")
-        
-        # Emparentamos al grupo del asset
-        mc.parent(cache_top_h, asset_name)
-        mc.parent(cache_top_g, asset_name)
-
-
-def load_cache(cache_path):
-
-    print(f"LOADING: {cache_path} ========================================")
-
-    template_anim_cache = tk.templates["maya_shot_anim_assets_abc_publish"]
-
-    #######
-    # GEO #
-    #######
-
-    # Cargamos la GEO
-    if not is_file_referenced(cache_path):
-        ref_node = mc.file(cache_path, r=True)
-    else:
-        ref_node = mc.referenceQuery(cache_path, rfn=True)
-
-    # Sacamos los fields de la cache
-    try:
-        cache_fields = template_anim_cache.get_fields(cache_path)
-        asset_name = cache_fields["Asset"]
-    except:
-        cache_fields = False
-
-    print(f"CACHE_FIELDS: {cache_fields}")
-    print(f"asset_name: {asset_name}")
-
-    new_objects = mc.referenceQuery(ref_node, nodes=True)
-    new_transforms = mc.ls(new_objects, type='transform', long=True)
-    cache_top = [t for t in new_transforms if not mc.listRelatives(t, parent=True)][0]
-
-    # Hide de los transforms que no necesitamos
-    for t in mc.listRelatives(cache_top, ad=1, c=1, type='transform'):
-        if 'hair' in t.lower() or 'proxy' in t.lower():
-            mc.setAttr(t + '.v', 0)
-
-    # Creamos el grupo del ASSET_NAME si no existe
-    if not transform_exists(asset_name):
-        mc.group(n=asset_name, em=True)
-
-    ###########
-    # SHADERS #
-    ###########
-
-    # First, try to remove old refs
-    for ref_node in mc.ls(type="reference") or []:
-        try:
-            ref_path = mc.referenceQuery(ref_node, filename=True)
-            if "shaders" in ref_path and f"{asset_name}_" in ref_path:
-                print(f"{ref_node} --> {ref_path}")
-                mc.file(removeReference=True, referenceNode=ref_node)
-        except RuntimeError:
-            continue
-
-    # Load Shaders
-    load_shaders(asset_name)
-
-    ########
-    # HAIR #
-    ########
-
-    load_ch_from_geo(cache_top, asset_name, cache_fields)
-
-    # PARENT
-    mc.parent(cache_top, asset_name)
-
-    # PARENT
-    mc.parent(asset_name, "ANIM")
-
-
-######################################
-
 def main():
     if len(sys.argv) < 2:
         raise RuntimeError("No se ha recibido el nombre de la secuencia")
@@ -937,8 +822,6 @@ def main():
         print("**** SHOT DONE!")
         progress = int((i / total) * 100)
         print(f"Progress: {progress}%", flush=True)
-
-######################################
 
 
 if __name__ == "__main__":

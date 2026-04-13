@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.11] - 2026-04-10
+
+   - Publish FLAY:
+      - Arreglamos el bool que entra en la función de publish en `render_qt_and_publish.py`
+      - REFACTOR de `sendFLayRender.py`
+
+   - Primera versión de Fix Escuela Ext
+
 ## [1.1.10] - 2026-04-09
 
    - Publish FLAY:
