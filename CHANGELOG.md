@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.1.11] - 2026-04-10
+## [1.1.12] - 2026-04-13
+
+   - Forzamos el playblast a 24 fps en `.../media/video_encoder.py`
+
+
+## [1.1.11] - 2026-04-13
 
    - Publish FLAY:
       - Arreglamos el bool que entra en la función de publish en `render_qt_and_publish.py`
