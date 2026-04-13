@@ -117,7 +117,7 @@ def _images_list_to_video(image_folder, output_path):
     for img in image_files:
         if img.lower().endswith(tuple(valid_extensions)):
             image_paths.append(os.path.join(image_folder, img))
-    
+
     # Ordenamos la secuencia porsiacaso
     sorted(image_paths)
 
@@ -142,6 +142,7 @@ def _images_list_to_video(image_folder, output_path):
         cmd = [
             'ffmpeg',
             '-y',
+            '-r', '24',
             '-f', 'concat',
             '-safe', '0',
             '-i', concat_file,
