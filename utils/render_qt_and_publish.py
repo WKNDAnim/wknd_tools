@@ -163,9 +163,10 @@ def main():
     print(f"[POST] SHOT: {args.shot} - VERSION: {args.version}", flush=True)
     print(f"[POST] DESCRIPTION: {args.description}", flush=True)
     print(f"[POST] AUTO: {args.auto}", flush=True)
+    auto_bool = args.auto == "True"
     print(f"[POST] SG VERSION (id): {args.sg_version}", flush=True)
 
-    publish(args.shot, args.version, args.description, auto=bool(args.auto), sg_version=args.sg_version)
+    publish(args.shot, args.version, args.description, auto=auto_bool, sg_version=args.sg_version)
 
     print("Version created and movie DONE! :)")
 
