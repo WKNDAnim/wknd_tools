@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.13] - 2026-04-14
+
+   - Fix Escuela Exterior:
+      - Añadimos Cesped
+      - Añadimos Vallas
+
+
 ## [1.1.12] - 2026-04-13
 
    - Forzamos el playblast a 24 fps en `.../media/video_encoder.py`
