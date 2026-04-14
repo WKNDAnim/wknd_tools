@@ -19,6 +19,7 @@ def _search_chars():
         return char_children
     return False
 
+
 def _update_rig(node):
 
     # node = f"{asset_name}_scene:{asset_name}"
@@ -125,7 +126,7 @@ def _update_mdl_to_shad():
 def update_all_outdated():
 
     updated = []
-  
+
     props = _search_props()
     if props:
         for node in props:
