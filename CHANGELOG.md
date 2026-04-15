@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.15] - 2026-04-15
+
+   - SendFLayRender
+      - Habia una ruta relativa en un import y no funcionaba...
+
 ## [1.1.14] - 2026-04-14
 
    - SendFLayRender:

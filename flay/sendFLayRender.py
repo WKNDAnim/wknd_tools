@@ -20,7 +20,7 @@ mc.loadPlugin("AbcImport")
 
 import wknd_tools
 from wknd_tools.utils import json_set, createColissionRenderLayer, reconnect_shaders
-from . import fix_escuelaExt
+from wknd_tools.flay import fix_escuelaExt
 import importlib
 importlib.reload(json_set)
 importlib.reload(createColissionRenderLayer)
