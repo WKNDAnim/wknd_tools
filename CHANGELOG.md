@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.16] - 2026-04-16
+
+   - SendFLayRender --> Igualamos el script de UTILS al de FLAY
+
 ## [1.1.15] - 2026-04-15
 
    - SendFLayRender

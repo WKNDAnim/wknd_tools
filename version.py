@@ -18,11 +18,11 @@ Release Types:
 import os
 import subprocess
 
-__version__ = "1.1.15"
+__version__ = "1.1.16"
 __version_info__ = {
     "major": 1,
     "minor": 1,
-    "patch": 15,
+    "patch": 16,
     "release": "stable",  # stable, beta, alpha
     "build": None
 }
