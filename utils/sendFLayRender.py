@@ -733,8 +733,10 @@ def is_arnes_visible(cache_top):
     b = mc.listRelatives(cache_top, fullPath=True, type="transform")
     c = mc.listRelatives(b, fullPath=True, type="transform")
     x = [i for i in c if "arnes_C_grp" in i]
-
-    return mc.getAttr(f"{x[0]}.v")
+    if x:
+        return mc.getAttr(f"{x[0]}.v")
+    else:
+        return False
 
 
 def load_shaders(asset_name):
@@ -793,6 +795,7 @@ def load_ch_from_geo(cache_top, asset_name, cache_fields):
 
         # Miramos si el arnes está visible
         print("\t\t\t- Miramos si el arnes está visible...")
+        print(cache_top)
 
         arnes = is_arnes_visible(cache_top)
 
@@ -809,7 +812,7 @@ def load_ch_from_geo(cache_top, asset_name, cache_fields):
         groom_paths.sort(reverse=True)
 
         print(groom_paths)
-        
+
         ref_node_g = mc.file(groom_paths[0], r=True, ns=f"{asset_name}")  # {copy_n or ''}")
 
         print("\t\t- Pelo referenciado")
@@ -819,7 +822,7 @@ def load_ch_from_geo(cache_top, asset_name, cache_fields):
         new_transforms_g = mc.ls(new_objects_g, type='transform', long=True)
         groom_shapes = mc.ls(new_objects_g, type='mesh') #, long=True)
         cache_top_g = [t for t in new_transforms_g if not mc.listRelatives(t, parent=True)][0]
-        
+
         # Hide de las meshes que no necesitamos
         for t in mc.listRelatives(cache_top_g , ad=1, c=1, type='mesh'):
             parent = mc.listRelatives(t, p=1)[0]
@@ -832,7 +835,7 @@ def load_ch_from_geo(cache_top, asset_name, cache_fields):
         mc.connectAttr(f"{hair_shapes[0]}.outMesh", f"{groom_shapes[0]}.inMesh")
 
         print("\t\t- Pelo conectado a su geo!")
-        
+
         # Emparentamos al grupo del asset
         mc.parent(cache_top_h, asset_name)
         mc.parent(cache_top_g, asset_name)
