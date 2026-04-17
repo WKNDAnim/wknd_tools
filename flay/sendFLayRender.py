@@ -733,8 +733,10 @@ def is_arnes_visible(cache_top):
     b = mc.listRelatives(cache_top, fullPath=True, type="transform")
     c = mc.listRelatives(b, fullPath=True, type="transform")
     x = [i for i in c if "arnes_C_grp" in i]
-
-    return mc.getAttr(f"{x[0]}.v")
+    if x:
+        return mc.getAttr(f"{x[0]}.v")
+    else:
+        return False
 
 
 def load_shaders(asset_name):
