@@ -47,7 +47,11 @@ def update_ref(asset_name):
 
     # Search the one for the asset we need
     current_path = [i for i in refs if asset_name in i]
-    current_path = current_path[0]
+
+    if not current_path:
+        _create_first_valla()
+    else:
+        current_path = current_path[0]
     print(f" - current_path --> {current_path}")
 
     # Get node
@@ -78,12 +82,65 @@ def update_ref(asset_name):
 
     return ref_node
 
+def _create_first_valla(elem):
+
+    new_directory = r"Z:\02Proyectos\Gus\assets\ELEM\verjaEscuela\SURF\Shading\publish\maya\assets"
+
+    if os.path.exists(new_directory):
+        files = sorted([f for f in os.listdir(new_directory) if f.endswith('.ma')])
+        if files:
+            new_file = os.path.join(new_directory, files[-1])
+
+    mc.file(new_file, r=True)
+    ref_node = mc.referenceQuery(new_file, referenceNode=True)
+    new_objects = mc.referenceQuery(ref_node, nodes=True)
+    new_transforms = mc.ls(new_objects, type='transform', long=True)
+    new_top = [t for t in new_transforms if not mc.listRelatives(t, parent=True)][0]
+
+    new_group = mc.group(n=elem, em=True)
+    try:
+        mc.parent(new_top , new_group)
+        mc.parent(new_group , 'SET')
+    except:
+        pass
+
+
+def _create_first_arbustoAlto():
+
+    elem = "arbustoAlto"
+    new_directory = r"Z:\02Proyectos\Gus\assets\ELEM\arbustoAlto\SURF\Shading\publish\ass"
+
+    if os.path.exists(new_directory):
+        files = sorted([f for f in os.listdir(new_directory) if f.endswith('.ass')])
+        if files:
+            new_file = os.path.join(new_directory, files[-1])
+
+    from mtoa.core import createStandIn
+    node = createStandIn()
+    mc.setAttr(node + '.mode', 3)
+    standIn = mc.listRelatives(node, parent=1)[0]
+
+    mc.setAttr(node + '.dso', new_file , type='string')
+    standIn = mc.rename(standIn, elem + '_std')
+
+    new_group = mc.group(n=elem, em=True)
+    try:
+        mc.parent(standIn, new_group)
+        mc.parent(new_group, 'SET')
+    except:
+        pass
+
 
 def fix_valla():
 
     asset_name = "verjaEscuela"
 
+    if not mc.objExists(asset_name):
+        _create_first_valla(asset_name)
+
+    print("\t - Update de la ref...")
     ref_node = update_ref(asset_name)
+    print("\t - get_top_transforms_from_reference")
     t = get_top_transforms_from_reference(ref_node)
     setTransRot(t[0])  # By default sets all to 0
 
@@ -92,9 +149,13 @@ def fix_arbustos():
 
     # Limpiamos la selección
     mc.select(cl=1)
+    print("\t - Limpiamos la seleccion")
 
     # Seleccionar el arbusto que ya tenemos en la escena normalmente
     arbusto_alto_orig = 'arbustoAlto_std'
+
+    if not mc.objExists(arbusto_alto_orig):
+        _create_first_arbustoAlto()
 
     # Seteamos la posición del primer seto
     x = 1436
@@ -105,11 +166,15 @@ def fix_arbustos():
     setTxTzRy(arbusto_alto_orig, x, y, z)
     mc.setAttr(arbusto_alto_orig + '.sx', 0.84)
 
+    print("\t - Modificamos Arbusto origen")
+
     all_inst = []
 
     ###################
     # Parte Delantera #
     ###################
+
+    print("\t\t - Creando la parte delantera...")
 
     posX = 1436
     for i in range(0, 3):
@@ -137,6 +202,8 @@ def fix_arbustos():
     # Parte Trasera #
     #################
 
+    print("\t\t - Creando la parte trasera...")
+
     for ins in all_inst:
         inst = mc.instance(ins)[0]
         mc.setAttr(inst + '.tz', -3939)
@@ -144,6 +211,8 @@ def fix_arbustos():
     #################
     # Parte Lateral #
     #################
+
+    print("\t\t - Creando la parte lateral...")
 
     all_inst = []
 
@@ -169,6 +238,8 @@ def fix_arbustos():
     # Calle delantera #
     ###################
 
+    print("\t\t - Creando la parte delantera de la otra calle...")
+
     arbusto_alto_orig = 'arbustoAlto_std4'
 
     inst = mc.instance(arbusto_alto_orig)[0]
@@ -187,7 +258,9 @@ def fix_arbustos():
 
 def fix_arbustos_vallas():
 
+    print("fixing escuelaExt --> ARBUSTOS")
     fix_arbustos()
+    print("fixing escuelaExt --> VALLAS")
     fix_valla()
 
 

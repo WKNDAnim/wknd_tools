@@ -444,6 +444,11 @@ def get_characters_and_props():
         'props': []
     }
 
+    # Lo primero que hacemos es desbloquear las Anim Layers
+    animLayers = mc.ls(type="animLayer")
+    for layer in animLayers:
+        mc.animLayer(layer, e=1, lock=0)
+
     # Buscar grupo CHAR
     if mc.objExists('CHAR'):
         char_children = mc.listRelatives('CHAR', children=True, type='transform') or []
