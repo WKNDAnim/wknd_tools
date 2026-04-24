@@ -314,12 +314,15 @@ def _export_textures(mesh_shader, textures_export_folder):
 
                 # Copia cada archivo
                 for f in udim_files:
-                    shutil.copy(f, texture_export_folder)
+                    base_f = os.path.basename(f)
+                    if not os.path.exists(os.path.join(texture_export_folder, base_f)):
+                        shutil.copy(f, texture_export_folder)
 
             else:
 
                 # Copy texture to publish
-                shutil.copyfile(texture_work_path, texture_export_path)
+                if not os.path.exists(texture_export_path):
+                    shutil.copyfile(texture_work_path, texture_export_path)
 
             # Change texture path on node for publish
             node_type = mc.nodeType(texture_node)

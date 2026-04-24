@@ -119,7 +119,8 @@ def _images_list_to_video(image_folder, output_path):
             image_paths.append(os.path.join(image_folder, img))
 
     # Ordenamos la secuencia porsiacaso
-    sorted(image_paths)
+    image_paths.sort()
+    # sorted(image_paths)
 
     print(f"INFO - image_paths --> {image_paths}")
 
@@ -128,7 +129,6 @@ def _images_list_to_video(image_folder, output_path):
 
     print(f"INFO - temp_dir --> {temp_dir}")
     print(f"INFO - concat_file --> {concat_file}")
-
 
     try:
         with open(concat_file, 'w', encoding="utf-8") as f:
