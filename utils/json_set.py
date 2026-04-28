@@ -91,18 +91,21 @@ def get_all_reference_instances(ref_node):
 def change_MDL_references_to_SURF():
 
     all_refs = mc.ls(type='reference')
+    print(all_refs)
     for ref in all_refs:
         # Hacemos un try por si hay un foster parent o algo asi, que daria error
         try:
-            filename = mc.referenceQuery(ref, filename=True )
+            filename = mc.referenceQuery(ref, filename=True)
         except:
             filename = False
 
         if filename:
-            if 'MDL' in filename:
+            if 'MDL' in filename and not "camerarig" in filename.lower():
+                print("="*50)
+                print(filename)
                 surf_file = get_last_shading_reference(ref)
-                print(f" ** Changing to --> {surf_file}")
-                mc.file(surf_file, loadReference=ref)
+                print(f" ***** Changing to --> {surf_file}")
+                # mc.file(surf_file, loadReference=ref)
 
 
 def get_last_shading_reference(reference_node):
@@ -110,10 +113,14 @@ def get_last_shading_reference(reference_node):
     file_name = mc.referenceQuery(reference_node, filename=True)
     asset_name = file_name.split('/')[5]
 
+    print(f"asset_name --> {asset_name}")
+
     if "ELEM" in file_name:
         surface_folder = 'Z:/02Proyectos/gus/assets/ELEM/' + asset_name + '/SURF/Shading/publish/caches/'
     elif "PRP" in file_name:
         surface_folder = 'Z:/02Proyectos/gus/assets/PRP/' + asset_name + '/SURF/Shading/publish/caches/'
+
+    print(f"surface_folder --> {surface_folder}")
 
     surface_file = sorted(os.listdir(surface_folder))[-1]
     surface_file_path = os.path.join(surface_folder , surface_file)
@@ -122,6 +129,8 @@ def get_last_shading_reference(reference_node):
 
 # Get elements from  scene
 def getAllElements():
+
+    print("\t\t - Getting All Elements...")
 
     # First, change all existing MDL for SURF
     change_MDL_references_to_SURF()
@@ -163,8 +172,8 @@ def getAllElements():
                         try:
                             all_inst = get_all_reference_instances(node)
 
-                            print("- ALL INST:")
-                            print(all_inst)
+                            # print("- ALL INST:")
+                            # print(all_inst)
 
                             # elem_dict[asset_name]['transforms'] = []
 
@@ -180,7 +189,7 @@ def getAllElements():
 
                                 elem_dict[asset_name]['transforms'].append({'obj': obj, 't': t, 'r': r, 's': s})
 
-                                print("ADDEEEEEED :)")
+                                # print("ADDEEEEEED :)")
 
                         except:
                             pass
@@ -280,7 +289,7 @@ def changeAbcToCleanAsset(elem_dict):
                         new_file = os.path.join(new_directory, files[-1])
                     else:
                         noCleanAsset.append(elem)
-                        continue 
+                        continue
 
                 else:
                     noCleanAsset.append(elem)
