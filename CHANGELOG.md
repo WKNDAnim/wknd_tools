@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.19] - 2026-04-28
+
+   - Send Flay Render:
+      - Cuando la geo lleva arnes, conectamos a la ShapeOrig del groom, no solo al shape
+
+   - Json Set:
+      - Omitimos camerarigs
+
+## [1.1.18] - 2026-04-24
+
+   - Exporters:
+      - Ordenamos la secuencia de imagenes con array.sort() y no con sorted()
+
+   - Fix Escuela Ext:
+      - Añadimos la opción de que si no encuentra la primera valla o el primer seto, lo crea.
+
+   - Anim Publisher:
+      - Nos aseguramos que los ANIM LAYERS estén desbloqueados antes del publish
+
+   - Json Set:
+      - Forzamos que si encontramos algo de MDL o RIG de PROP en la escena, reemplazamos la ref por el SURF para que aparezca en el JSON
+      - Filtramos que si hay algo que tenga la escala a 0, no lo ponemos en el JSON
+
+   - Añadimos scripts:
+      - FixCleanAssetsTextures --> Hace repath a publish de las texturas del último cleanAsset publicado
+      - RepublishAnimCaches --> Republica las caches de los shots que contienen alguno de los BAD_ASSETS (los PROPS que se pasaron mal las UVs)
+
+
 ## [1.1.17] - 2026-04-17
 
    - SendFLayRender:
