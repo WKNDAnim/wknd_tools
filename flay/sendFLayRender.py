@@ -811,7 +811,7 @@ def load_ch_from_geo(cache_top, asset_name, cache_fields):
         groom_paths.sort(reverse=True)
 
         print(groom_paths)
-        
+
         ref_node_g = mc.file(groom_paths[0], r=True, ns=f"{asset_name}")  # {copy_n or ''}")
 
         print("\t\t- Pelo referenciado")
@@ -821,7 +821,7 @@ def load_ch_from_geo(cache_top, asset_name, cache_fields):
         new_transforms_g = mc.ls(new_objects_g, type='transform', long=True)
         groom_shapes = mc.ls(new_objects_g, type='mesh') #, long=True)
         cache_top_g = [t for t in new_transforms_g if not mc.listRelatives(t, parent=True)][0]
-        
+
         # Hide de las meshes que no necesitamos
         for t in mc.listRelatives(cache_top_g , ad=1, c=1, type='mesh'):
             parent = mc.listRelatives(t, p=1)[0]
@@ -830,11 +830,18 @@ def load_ch_from_geo(cache_top, asset_name, cache_fields):
         print(f"\t\t\t- HAIR SHAPE --> {hair_shapes[0]}")
         print(f"\t\t\t- GROOM SHAPE --> {groom_shapes[0]}")
 
+        # Si hay ARNES, conectamos al shapeOrig
+        if arnes:
+            groom_shape = [s for s in groom_shapes if "orig" in s.lower()]
+            groom_shape = groom_shape[0]
+        else:
+            groom_shape = groom_shapes[0]
+
         # Conectamos el out_mesh del hair al in_mesh del groom
-        mc.connectAttr(f"{hair_shapes[0]}.outMesh", f"{groom_shapes[0]}.inMesh")
+        mc.connectAttr(f"{hair_shapes[0]}.outMesh", f"{groom_shape}.inMesh")
 
         print("\t\t- Pelo conectado a su geo!")
-        
+
         # Emparentamos al grupo del asset
         mc.parent(cache_top_h, asset_name)
         mc.parent(cache_top_g, asset_name)
