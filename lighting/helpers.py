@@ -1,17 +1,140 @@
 import maya.app.renderSetup.model.renderSetup as rs
 import maya.app.renderSetup.model.renderLayer as renderLayer
 import maya.app.renderSetup.model.override as override
+import maya.app.renderSetup.model.utils as utils
 import maya.cmds as mc
 import mtoa.aovs as aovs
 from mtoa.core import createOptions
 import mtoa.ui.arnoldmenu as arnoldmenu
 
 
+######################################
+# PUBLIC
+
 def _createRenderLayers():
 
-    # Crear render layer
     renderSetup = rs.instance()
-    layer = renderSetup.createRenderLayer("collisionAO")
+
+    ######
+    # BG #
+    ######
+
+    bg_layer = renderSetup.createRenderLayer("BG")
+
+    # Collection
+    col = bg_layer.createCollection("Set")
+    col.getSelector().setPattern("SET*")
+    col.getSelector().setFilterType(1)
+
+    col_lgt = bg_layer.createCollection("Light")
+    # col_lgt.getSelector().setPattern("LGT*")
+    col_lgt.getSelector().setFilterType(1)
+
+    ########
+    # CHAR #
+    ########
+
+    char_layer = renderSetup.createRenderLayer("CHAR")
+
+    # Collection
+    col = char_layer.createCollection("Char")
+    col.getSelector().setPattern("ANIM*")
+    col.getSelector().setFilterType(1)
+
+    col_lgt = char_layer.createCollection("Light")
+    # col_lgt.getSelector().setPattern("LGT*")
+    col_lgt.getSelector().setFilterType(1)
+
+    ######
+    # SH #
+    ######
+
+    sh_layer = renderSetup.createRenderLayer("SH")
+
+    # Collection
+    col = sh_layer.createCollection("Shadows")
+    col.getSelector().setPattern("ANIM*")
+    col.getSelector().setFilterType(1)
+
+    # Subcollection shapes
+    shapes_col = col.createCollection("Shapes")
+    shapes_col.getSelector().setPattern("*")
+    shapes_col.getSelector().setFilterType(2)
+
+    # Crear AbsOverride
+    abs_ov = shapes_col.createOverride("primaryVisibility", override.AbsOverride.kTypeId)
+    abs_ov.setAttributeName("primaryVisibility")
+    nodes = mc.ls("ANIM*", dagObjects=True, shapes=True)
+    if nodes:
+        plug = mc.ls(nodes[0] + ".primaryVisibility")[0]
+        abs_ov.finalize(plug)
+        abs_ov.setAttrValue(False)
+
+    col_lgt = sh_layer.createCollection("Light")
+    # col_lgt.getSelector().setPattern("LGT*")
+    col_lgt.getSelector().setFilterType(1)
+
+    #########
+    # VOLUM #
+    #########
+
+    volum_layer = renderSetup.createRenderLayer("VOLUM")
+
+    # Collection SET
+    set_col = volum_layer.createCollection("All")
+    set_col.getSelector().setPattern("SET*, CHAR*")
+    set_col.getSelector().setFilterType(1)
+
+    # Subcollection shapes para aiMatte
+    set_shapes = set_col.createCollection("Shapes")
+    set_shapes.getSelector().setFilterType(2)
+    set_shapes.getSelector().setPattern("*")
+
+    # Crear AbsOverride
+    abs_ov = set_shapes.createOverride("aiMatte", override.AbsOverride.kTypeId)
+    abs_ov.setAttributeName("aiMatte")
+    nodes = mc.ls("SET*", dagObjects=True, shapes=True)
+    if nodes:
+        plug = mc.ls(nodes[0] + ".aiMatte")[0]
+        abs_ov.finalize(plug)
+        abs_ov.setAttrValue(True)
+
+    col_lgt = volum_layer.createCollection("Light")
+    # col_lgt.getSelector().setPattern("LGT*")
+    col_lgt.getSelector().setFilterType(1)
+
+    # # Collection CHAR
+    # char_col = volum_layer.createCollection("Char")
+    # char_col.getSelector().setPattern("CHAR*")
+    # char_col.getSelector().setFilterType(1)
+
+    # # Subcollection shapes para aiMatte
+    # char_shapes = char_col.createCollection("Shapes")
+    # char_shapes.getSelector().setFilterType(2)
+    # char_shapes.getSelector().setPattern("*")
+
+    # # Crear AbsOverride
+    # abs_ov = char_shapes.createOverride("aiMatte", override.AbsOverride.kTypeId)
+    # abs_ov.setAttributeName("aiMatte")
+    # nodes = mc.ls("SET*", dagObjects=True, shapes=True)
+    # if nodes:
+    #     plug = mc.ls(nodes[0] + ".aiMatte")[0]
+    #     abs_ov.finalize(plug)
+    #     abs_ov.setAttrValue(True)
+
+
+def _createRenderLayersFromJson():
+
+    renderSetup = rs.instance()
+
+    path_to_json = r"C:\Users\aferraz\Documents\maya\RSTemplates\test.json"
+
+    # behavior controla qué hacer si ya existen layers con el mismo nombre
+    renderSetup.importAllFromFile(
+        path_to_json,
+        behavior=1,        # 0=merge, 1=replace — hay que verificar los valores exactos
+        prependToName=""   # prefijo opcional para los nombres
+    )
 
 
 def _hideThings():
@@ -95,9 +218,17 @@ def _setRenderSettings():
     mc.setAttr("defaultRenderGlobals.extensionPadding", 4)   # padding de 4
     mc.setAttr("defaultRenderGlobals.periodInExt", 1)
 
+    # Frame range
+    end_frame = mc.playbackOptions(q=True, maxTime=True)
+    mc.setAttr("defaultRenderGlobals.startFrame", 1001)
+    mc.setAttr("defaultRenderGlobals.endFrame", end_frame)
+
     # Set AOVs
     _set_aovs()
 
+
+######################################
+# PRIVATE
 
 def _set_aovs():
 
@@ -107,11 +238,8 @@ def _set_aovs():
     aov_list = [
         'N',
         'P',
-        'Z',
         'albedo',
         'coat',
-        # 'crypto_material',
-        # 'crypto_object',
         'diffuse',
         'direct',
         'emission',
@@ -133,13 +261,7 @@ def _set_aovs():
 
     __add_cryptos()
 
-    # __add_z_driver
-
-    # # Refresh UI de Arnold
-    # try:
-    #     arnoldmenu.arnoldMenuUpdate()
-    # except:
-    #     pass
+    __add_z_driver()
 
 
 def __add_z_driver():
@@ -147,14 +269,12 @@ def __add_z_driver():
     aov_interface = aovs.AOVInterface()
     z_aov = aov_interface.addAOV('Z')
 
-    driver = mc.createNode('aiAOVDriver', name='aiAOVDriver_Z')
-    mc.setAttr(driver + '.prefix', 'Z_pass', type='string')
-    mc.setAttr(driver + '.halfPrecision', 0)
-    mc.setAttr(driver + '.mergeAOVs', 0)
+    driver = 'defaultArnoldDriver'
+    aov_filter = mc.createNode('aiAOVFilter')
 
-    # Conexión correcta usando outputs.driver
     next_plug = mc.getAttr(z_aov.node + '.outputs', size=True)
     mc.connectAttr(driver + '.message', f'{z_aov.node}.outputs[{next_plug}].driver', force=True)
+    mc.connectAttr(aov_filter + '.message', f'{z_aov.node}.outputs[{next_plug}].filter', force=True)
 
 
 def __add_ao_aov():
@@ -168,7 +288,7 @@ def __add_ao_aov():
     if not mc.objExists('aiAO_shader'):
         ao_shader = mc.shadingNode('aiAmbientOcclusion', asShader=True, name='aiAO_shader')
     else:
-        ao_shader = mc.select('aiAO_shader')
+        ao_shader = 'aiAO_shader'
 
     # Conectar el shader al AOV
     mc.connectAttr(ao_shader + '.outColor', aov.node + '.defaultValue', force=True)
@@ -180,13 +300,13 @@ def __add_cryptos():
 
     # Crear el AOV
     c_material = aov_interface.addAOV('crypto_material')
-    c_asset = aov_interface.addAOV('crypto_asset')
+    c_asset = aov_interface.addAOV('crypto_object')
 
     # Creamos en nodo cryptomate
     if not mc.objExists("_aov_cryptomatte"):
         shader = mc.createNode("cryptomatte", n="_aov_cryptomatte")
     else:
-        shader = mc.select('_aov_cryptomatte')
+        shader = '_aov_cryptomatte'
 
 
     # Configurar parámetros del AO
