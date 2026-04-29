@@ -830,15 +830,15 @@ def load_ch_from_geo(cache_top, asset_name, cache_fields):
         print(f"\t\t\t- HAIR SHAPE --> {hair_shapes[0]}")
         print(f"\t\t\t- GROOM SHAPE --> {groom_shapes[0]}")
 
-        # Si hay ARNES, conectamos al shapeOrig
-        if arnes:
-            groom_shape = [s for s in groom_shapes if "orig" in s.lower()]
-            groom_shape = groom_shape[0]
-        else:
-            groom_shape = groom_shapes[0]
+        # # Si hay ARNES, conectamos al shapeOrig
+        # if arnes:
+        #     groom_shape = [s for s in groom_shapes if "orig" in s.lower()]
+        #     groom_shape = groom_shape[0]
+        # else:
+        #     groom_shape = groom_shapes[0]
 
         # Conectamos el out_mesh del hair al in_mesh del groom
-        mc.connectAttr(f"{hair_shapes[0]}.outMesh", f"{groom_shape}.inMesh")
+        mc.connectAttr(f"{hair_shapes[0]}.outMesh", f"{groom_shapes[0]}.inMesh")
 
         print("\t\t- Pelo conectado a su geo!")
 

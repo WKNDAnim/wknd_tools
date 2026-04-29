@@ -46,7 +46,6 @@ def createColisionTestRenderLayer():
 
     # Formato EXR
     cmds.setAttr("defaultRenderGlobals.imageFormat", 40)  # 40 = EXR
-    
 
     # Arnold EXR settings
     cmds.setAttr("defaultArnoldDriver.exrCompression", 2)  # 2 = zip

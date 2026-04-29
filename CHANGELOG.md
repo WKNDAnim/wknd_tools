@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.20] - 2026-04-29
+
+   - Add Lighting Helpers
+      - Hide modeled hair
+      - Render Settings + AOVs
+
+   - Send Flay Render:
+      - REVERTIMOS ESTO --> Cuando la geo lleva arnes, conectamos a la ShapeOrig del groom, no solo al shape
+
+
 ## [1.1.19] - 2026-04-28
 
    - Send Flay Render:
