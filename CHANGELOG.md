@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.21] - 2026-04-29
+
+   - FLAY:
+      - Creamos `helpers.py`:
+         - Función para traer las briznas del cesped
+
+   - LGT:
+      - Añadimos la función para crear las render Layers
+      - Fixes de Render settings
+
 ## [1.1.20] - 2026-04-29
 
    - Add Lighting Helpers
