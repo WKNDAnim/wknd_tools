@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.22] - 2026-04-30
+
+   - ANIM PUB:
+      - Añadimos a gbartlett para publicar por separado
+
+   - LGT helpers:
+      - Añadimos a los render settings en cambio del path de ocio
+
+
 ## [1.1.21] - 2026-04-29
 
    - FLAY:

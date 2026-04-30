@@ -18,8 +18,7 @@ except ImportError:
     from shiboken2 import wrapInstance
     from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
-ALLOW_SELECTED = ["cpuigdollers", "aferraz", "jmartinez", "rmadrid"]
-# ALLOW_SELECTED = ["cpuigdollers", "jmartinez"]
+ALLOW_SELECTED = ["cpuigdollers", "aferraz", "jmartinez", "rmadrid", "gbartlett"]
 USER = os.getlogin()
 
 
