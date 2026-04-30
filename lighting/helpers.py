@@ -223,6 +223,10 @@ def _setRenderSettings():
     mc.setAttr("defaultRenderGlobals.startFrame", 1001)
     mc.setAttr("defaultRenderGlobals.endFrame", end_frame)
 
+    # Color Management
+    ocio_file = r"\\192.168.23.2\DataCenter\05Framework\packages\resources\config.ocio"
+    mc.colorManagementPrefs(e=True, configFilePath=ocio_file)
+
     # Set AOVs
     _set_aovs()
 
