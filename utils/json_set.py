@@ -105,7 +105,7 @@ def change_MDL_references_to_SURF():
                 print(filename)
                 surf_file = get_last_shading_reference(ref)
                 print(f" ***** Changing to --> {surf_file}")
-                # mc.file(surf_file, loadReference=ref)
+                mc.file(surf_file, loadReference=ref)
 
 
 def get_last_shading_reference(reference_node):
@@ -182,6 +182,14 @@ def getAllElements():
                                 t = mc.xform(obj, q=True, t=True, ws=True)
                                 r = mc.xform(obj, q=True, ro=True, ws=True)
                                 s = mc.xform(obj, q=True, s=True, r=True)
+
+                                # Harcodeamos un par de fixes para el descampado
+                                if "descampado" in obj:
+                                    
+                                    if "carretera" in obj:
+                                        s = [1.52, 1.52, 1.52]
+                                    if "fabrica" in obj:
+                                        s = mc.xform(obj, q=True, s=True, ws=True)
 
                                 # Miramos si la escala está a 0 para no poner eso en la escena
                                 if all(i < 0.0000001 for i in s):

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.23] - 2026-05-08
+
+   - SET AUTO EXPORTER:
+      - Añadimos exportación de una cache para la RED ELECTRICA en `.../Animation/caches/_extras`
+
+   - SEND FLAY RENDER:
+      - Añadimos fix de cargar la cache de la RED ELECTRICA en los shots con DESCAMPADO
+
+   - LIGHTING:
+      - `move_FML_nuboyana.py`:
+         - Hacemos un script que coge la escena de Lighting de Maya y los renders FML que vienen de Nuboyana y los pasamos a work para meterlos en pipeline.
+
+
 ## [1.1.22] - 2026-04-30
 
    - ANIM PUB:

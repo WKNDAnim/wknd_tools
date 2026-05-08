@@ -154,30 +154,91 @@ def _create_scenes(shot, create_flay=True):
     # Load assets to scene #
     ########################
 
-    # SET #############################################
+    #######
+    # SET #
+    #######
+
     print("\t - Importando JSON SET...")
 
     json_set.createShotFromJson(set_path)
 
     print("\t - JSON SET importado ")
+    print("="*70)
+    print("="*70)
 
-    # Fix de setos y vayas en escuelaExt
+    #########
+    # FIXES #
+    #########
+
+    print("- Miramos si hacen falta Fixes....")
+
+    # Fix escuelaExt
     escuelaExt = {'id': 1866, 'name': 'escuelaExt', 'type': 'Asset'}
 
     sg_shot = sg.find_one("Shot", [["code", "is", shot["code"]]], ["parent_shots"])
+    print("SG SHOT:")
     print(sg_shot)
+
     parent_shots = sg.find_one("Shot", [["code", "is", sg_shot["parent_shots"][0]["name"]]], ["assets"])
+    print("PARENT SHOTS:")
     print(parent_shots)
 
     if escuelaExt in parent_shots["assets"]:
 
-        print("\t - Contiene escuelaExt!!!!!!!!!!!!!!!!!!!!!!")
+        print("\t - Contiene EscuelaExt ----------------------------------------")
         fix_escuelaExt.fix_arbustos_vallas()
         print("\t\t - Añadimos Arbustos y Vallas")
         fix_escuelaExt.fix_cesped()
         print("\t\t - Añadimos Cesped")
 
-    # ANIM ############################################
+    # Fix Descampado
+    descampado = {'id': 2017, 'name': 'descampado', 'type': 'Asset'}
+
+    if descampado in parent_shots["assets"]:
+
+        print("\t - Contiene Descampado ----------------------------------------")
+
+        path_tendido_electrico = rf'Z:\02Proyectos\Gus\sequences\{shot["code"].split("_")[0]}\{shot["code"]}\ANM\Animation\publish\caches\_extras\{shot["code"]}_redElectrica.abc'
+
+        print(f"\t\t - path_tendido_electrico --> {path_tendido_electrico}")
+
+        if os.path.exists(path_tendido_electrico):
+
+            # Cargamos la GEO
+            print("\t\t - Cargamos la GEO...")
+            if not is_file_referenced(path_tendido_electrico):
+                ref_node = mc.file(path_tendido_electrico, r=True)
+            else:
+                ref_node = mc.referenceQuery(path_tendido_electrico, rfn=True)
+
+            # Buscamos el top node
+            print("\t\t - Buscamos el top node")
+            top_nodes = mc.referenceQuery(path_tendido_electrico, nodes=True, dagPath=True)
+            cache_top = mc.ls(top_nodes, assemblies=True, long=True)[0]
+            print(f"cache_top --> {cache_top}")
+
+            asset_name = "redElectrica_abc"
+
+            # Creamos el grupo del ASSET_NAME si no existe
+            if not transform_exists(asset_name):
+                mc.group(n=asset_name, em=True)
+
+            mc.parent(cache_top, asset_name)
+            mc.parent(asset_name, "SET")
+
+            # Cargamos sus shaders
+            load_shaders("cable")
+            load_shaders("tendidoElectrico")
+
+            # Escondemos el Tendido Eléctrico que viene con el JSON
+            mc.setAttr('tendidoElectrico.v', 0)
+
+    print("- Fin Fixes....")
+
+    ########
+    # ANIM #
+    ########
+
     if anim_cache_files and anim_cache_files != "na":
 
         print("\t - Importando ANIM CACHES...")
