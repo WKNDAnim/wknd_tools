@@ -82,6 +82,7 @@ def update_ref(asset_name):
 
     return ref_node
 
+
 def _create_first_valla(elem):
 
     new_directory = r"Z:\02Proyectos\Gus\assets\ELEM\verjaEscuela\SURF\Shading\publish\maya\assets"

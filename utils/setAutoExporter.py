@@ -19,8 +19,10 @@ now = datetime.datetime.now()
 
 import wknd_tools
 from wknd_tools.utils import json_set
+from wknd_tools.core import exporters
 import importlib
 importlib.reload(json_set)
+importlib.reload(exporters)
 
 #######################
 # Conectar a ShotGrid #
@@ -132,6 +134,44 @@ def get_shots_from_sequencer():
     sequencer = mc.listConnections(seq_manager, type='sequencer')[0]
     shots = mc.listConnections(sequencer, type="shot") or []  # Get a list of all shots from the sequencer.
     return shots
+
+
+def export_tendidoElectrico(file_path, frame_in, frame_out):
+
+    print("- Exportando Red Eléctrica:")
+
+    # Creamos la carpeta _extras si no existe
+    if not os.path.exists(os.path.dirname(file_path)):
+        os.makedirs(os.path.dirname(file_path))
+
+    grp_cables = 'descampado_None:grp_cables'
+    grp_tentido = 'descampado_None:grp_tentidoelectrico'
+    nuevo_grupo = 'redElectrica'
+
+    # 1. Guardar padres originales antes de tocar nada
+    padre_cables  = mc.listRelatives(grp_cables,  parent=True, fullPath=True)
+    padre_tentido = mc.listRelatives(grp_tentido, parent=True, fullPath=True)
+
+    # 2. Desemparentar al world
+    mc.parent(grp_cables,  world=True)
+    mc.parent(grp_tentido, world=True)
+
+    # 3. Crear nuevo grupo y exportar
+    nuevo_grp = mc.group(grp_cables, grp_tentido, name=nuevo_grupo)
+    exporters.export_alembic(nuevo_grp, file_path, frame_in, frame_out)
+    print(f"\t - Exportado correctamente: {file_path}")
+
+    # 4. Desemparentar del grupo temporal y restaurar jerarquía original
+    mc.parent(grp_cables,  world=True)
+    mc.parent(grp_tentido, world=True)
+    mc.delete(nuevo_grp)
+
+    if padre_cables:
+        mc.parent(grp_cables,  padre_cables[0])
+    if padre_tentido:
+        mc.parent(grp_tentido, padre_tentido[0])
+
+    print("\t - Jerarquía restaurada correctamente.")
 
 
 def main():
@@ -258,6 +298,10 @@ def main():
                 sg.update("Shot", shot_entity["id"], {"sg_set_json_exported": True})
 
             logger.info("---------- Shot Done ----------")
+
+            # Exportamos
+            path_tendido_electrico = rf'Z:\02Proyectos\Gus\sequences\{mastershot_fields["Sequence"]}\{shot_name}\ANM\Animation\publish\caches\_extras\{shot_name}_redElectrica.abc'
+            export_tendidoElectrico(path_tendido_electrico, start_frame, end_frame)
 
         logger.info(f" ** Succeed --> {succeed}")
 
