@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.24] - 2026-05-12
+
+   - FLAY:
+      - Añadimos un botón para exportar Caches de animación fixeadas en FLAY --> `exportCaches.py`
+
+   - LGT:
+      - Añadimos un script para mover a su sitio el material que llega de PT (Solo el material de aprobación de Lighting)
+
+
 ## [1.1.23] - 2026-05-08
 
    - SET AUTO EXPORTER:
