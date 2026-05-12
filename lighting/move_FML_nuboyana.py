@@ -2,8 +2,12 @@ import sys
 sys.path.insert(0, r"Z:\05Framework\users\aferraz\packages\dev_tk\master_tk_config\install\core\python")
 sys.path.insert(0, r"Z:\05Framework\users\aferraz")
 
-import maya.standalone
-maya.standalone.initialize(name='python')
+try:
+    import maya.standalone
+    maya.standalone.initialize(name='python')
+except:
+    pass
+
 import maya.cmds as mc
 
 mc.loadPlugin("AbcImport")
@@ -78,6 +82,9 @@ def _find_shot_paths(shot):
     # Buscamos la root
     maya_pt_root = template_pt_maya.format(seq=sequence_name, shot=shot_name)
 
+    if not os.path.exists(maya_pt_root):
+        return False
+
     # Buscamos la version que tiene la escena de Nuboyana
     versiones = os.listdir(maya_pt_root)
     versiones.sort(reverse=True)
@@ -126,10 +133,10 @@ def copy_renders(paths):
     shot_name = paths["shot_name"] 
     version = paths["version"]
 
-    print("\t\t - renders_pt_root --> {renders_pt_root}")
-    print("\t\t - renders_work_root --> {renders_work_root}")
-    print("\t\t - shot_name --> {shot_name}")
-    print("\t\t - version --> {version}")
+    print(f"\t\t - renders_pt_root --> {renders_pt_root}")
+    print(f"\t\t - renders_work_root --> {renders_work_root}")
+    print(f"\t\t - shot_name --> {shot_name}")
+    print(f"\t\t - version --> {version}")
 
     # Buscamos las render Layers
     render_layers = os.listdir(renders_pt_root)
@@ -138,17 +145,17 @@ def copy_renders(paths):
 
     for layer in render_layers:
 
-        print("\t\t - LAYER --> {layer} ---------- ")
+        print(f"\t\t - LAYER --> {layer} ---------- ")
 
         # Formamos la carpeta del LAYER
         layer_folder_pt = os.path.join(renders_pt_root, layer)
-        print("\t\t\t - layer_folder_pt --> {layer_folder_pt}")
+        print(f"\t\t\t - layer_folder_pt --> {layer_folder_pt}")
         
         # Buscamos la última version dentro de la LAYER
         versiones = os.listdir(layer_folder_pt)
         versiones.sort(reverse=True)
         version_folder_pt = os.path.join(layer_folder_pt, versiones[0])
-        print("\t\t\t - version_folder_pt --> {version_folder_pt}")
+        print(f"\t\t\t - version_folder_pt --> {version_folder_pt}")
 
         # Filtramos las Render Layers
         if not "renderSlapcomp" in layer:
@@ -158,7 +165,7 @@ def copy_renders(paths):
         
         # Formamos la carpeta de la versión
         layer_folder_work = os.path.join(renders_work_root, renderLayer_name)
-        print("\t\t\t - layer_folder_work --> {layer_folder_work}")
+        print(f"\t\t\t - layer_folder_work --> {layer_folder_work}")
         if not os.path.exists(layer_folder_work):
             os.makedirs(layer_folder_work)
 
@@ -213,6 +220,64 @@ def repath_references():
     print(f"Reemplazadas: {replaced} | Sin cambios: {skipped}")
     print("=" * 60)
 
+# Repath Textures
+def get_texture_nodes_from_sg(sg):
+    """Retorna los nodos file y aiImage conectados a un Shading Group."""
+    texture_nodes = {"file": [], "aiImage": []}
+
+    # Obtener todos los nodos upstream del SG
+    history = mc.listHistory(sg, pruneDagObjects=True) or []
+
+    for node in history:
+        node_type = mc.nodeType(node)
+        if node_type == "file":
+            texture_nodes["file"].append(node)
+        elif node_type == "aiImage":
+            texture_nodes["aiImage"].append(node)
+
+    return texture_nodes
+
+
+def list_and_replace_shading_groups_and_textures():
+    """Lista todos los Shading Groups con sus nodos file y aiImage."""
+    shading_groups = mc.ls(type="shadingEngine")
+
+    if not shading_groups:
+        print("No se encontraron Shading Groups en la escena.")
+        return
+
+    print("\n" + "="*60)
+    print(f"  Shading Groups encontrados: {len(shading_groups)}")
+    print("="*60)
+
+    for sg in shading_groups:
+        textures = get_texture_nodes_from_sg(sg)
+        has_textures = textures["file"] or textures["aiImage"]
+
+        print(f"\n▶ {sg}")
+
+        if not has_textures:
+            print("    (sin nodos de textura)")
+            continue
+
+        if textures["file"]:
+            print(f"    file nodes ({len(textures['file'])}):")
+            for node in textures["file"]:
+                path = mc.getAttr(f"{node}.fileTextureName")
+                path = path.replace(LINUX_ROOT, WINDOWS_ROOT)
+                mc.setAttr(f"{node}.fileTextureName", path, type="string")
+                print(f"      • {node}  →  {path}")
+
+        if textures["aiImage"]:
+            print(f"    aiImage nodes ({len(textures['aiImage'])}):")
+            for node in textures["aiImage"]:
+                path = mc.getAttr(f"{node}.filename")
+                path = path.replace(LINUX_ROOT, WINDOWS_ROOT)
+                mc.setAttr(f"{node}.filename", path, type="string")
+                print(f"      • {node}  →  {path}")
+
+    print("\n" + "="*60 + "\n")
+
 
 ############################################
 
@@ -228,13 +293,18 @@ def main():
     # Recorremos los shots
     for shot in shots:
 
-        print(f" + Procesando {shot['entity.Shot.code']} ============")
+        print(f"\n+ Procesando {shot['entity.Shot.code']} ============")
         print(f"\t - shot --> {shot}")
 
         # Copiamos la escena a work
         print("\t - Copiamos la escena a work...")
         
         paths = _find_shot_paths(shot)
+        print(paths)
+        if not paths:
+            print("❌ AUN NO TENEMOS EL MATERIAL DE ESTO")
+            continue
+
         maya_pt_path = paths["nuboyana"]["maya_scene"]
         maya_work_path = paths["work"]["maya_scene"]
 
@@ -242,6 +312,7 @@ def main():
         print(f"\t\t - PATH TARGET WKND --> {maya_work_path}")
 
         if os.path.exists(maya_work_path):
+            print("⚠️⚠️⚠️ Esta versión de la escena de Maya ya existe...")
             continue
 
         shutil.copy2(maya_pt_path, maya_work_path)
@@ -258,6 +329,9 @@ def main():
         # Cambiamos las refs para que apunten a nuestro server
         print("\t - Cambiando el path de las referencias...")
         repath_references()
+        # Cambiamos las refs para que apunten a nuestro server
+        print("\t - Cambiando el path de las texturas...")
+        list_and_replace_shading_groups_and_textures()
 
         # Cambiamos el archivo OCIO
         print("\t - Cambiamos el archivo OCIO...")
