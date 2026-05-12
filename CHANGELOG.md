@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.25] - 2026-05-12
+
+   - LGT:
+      - Añadimos el AOV "RGBA" a los Render Settings
+
 ## [1.1.24] - 2026-05-12
 
    - FLAY:
