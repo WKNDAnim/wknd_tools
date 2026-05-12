@@ -254,6 +254,7 @@ def _set_aovs():
         'specular',
         'sss',
         'transmission',
+        "RGBA"
     ]
 
     aov_interface = aovs.AOVInterface()
