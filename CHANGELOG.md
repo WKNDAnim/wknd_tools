@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.26] - 2026-05-13
+
+   - ANIM PUBLISHER:
+      - Añadimos a Elia para que pueda publicar alembics por separado.
+
 ## [1.1.25] - 2026-05-12
 
    - LGT:
