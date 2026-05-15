@@ -2,6 +2,20 @@ import maya.cmds as mc
 import os
 import json
 
+VEGETATION_LIST = [
+    'pino',
+    'platanera',
+    'arbusto',
+    'arbustoAlto',
+    'plataneraNaranja',
+    'plataneraAmarilla',
+    'plataneraVerdeOscuro',
+    'plataneraPequena',
+    'arbustoFloresAmarillas',
+    'bloque01'
+    ]
+
+
 
 def get_reference_top_node(ref_node):
     """Obtiene el transform top level de una referencia."""
@@ -214,16 +228,17 @@ def writeElemDictToJson(elem_dict, json_path):
 
 def changeAbcToCleanAsset(elem_dict):
 
-    vegetation_list = [
-        'platanera',
-        'arbusto',
-        'arbustoAlto',
-        'plataneraNaranja',
-        'plataneraAmarilla',
-        'plataneraVerdeOscuro',
-        'plataneraPequena',
-        'arbustoFloresAmarillas'
-        ]
+    # vegetation_list = [
+    #     'pino',
+    #     'platanera',
+    #     'arbusto',
+    #     'arbustoAlto',
+    #     'plataneraNaranja',
+    #     'plataneraAmarilla',
+    #     'plataneraVerdeOscuro',
+    #     'plataneraPequena',
+    #     'arbustoFloresAmarillas'
+    #     ]
 
     noCleanAsset = []
     noAss = []
@@ -235,7 +250,7 @@ def changeAbcToCleanAsset(elem_dict):
         shader_file = elem_dict[elem]['shader_file']
         directory = os.path.dirname(ref_file)
 
-        if elem in vegetation_list:
+        if elem in VEGETATION_LIST:
 
             new_directory = directory.replace('caches', 'ass')
 
@@ -343,17 +358,18 @@ def createShotFromJson(json_path):
     with open(json_path, 'r') as f:
         elem_dict = json.load(f)
 
-    vegetation_list = [
-        'platanera',
-        'arbusto',
-        'arbustoAlto',
-        'plataneraNaranja',
-        'plataneraAmarilla',
-        'plataneraVerdeOscuro',
-        'plataneraPequena',
-        'arbustoFloresAmarillas',
-        'bloque01'
-        ]
+    # vegetation_list = [
+    #     'pino',
+    #     'platanera',
+    #     'arbusto',
+    #     'arbustoAlto',
+    #     'plataneraNaranja',
+    #     'plataneraAmarilla',
+    #     'plataneraVerdeOscuro',
+    #     'plataneraPequena',
+    #     'arbustoFloresAmarillas',
+    #     'bloque01'
+    #     ]
 
     noCleanAsset = []
     noAss = []
@@ -367,7 +383,7 @@ def createShotFromJson(json_path):
         shader_file = elem_dict[elem]['shader_file']
         directory = os.path.dirname(ref_file)
 
-        if elem in vegetation_list:
+        if elem in VEGETATION_LIST:
 
             new_directory = directory.replace('caches', 'ass')
 
