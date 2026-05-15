@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.27] - 2026-05-15
+
+   - FLAY:
+      - Json Set --> Añadimos Pino a la Vegetation List
+      - Export Caches --> Arreglamos que exportaba dos geo y no una geo y un hair
+
 ## [1.1.26] - 2026-05-13
 
    - ANIM PUBLISHER:

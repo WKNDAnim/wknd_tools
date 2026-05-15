@@ -9,26 +9,28 @@ tk = engine.sgtk
 sg = engine.shotgun
 
 
-def _export_hair(ref_path, cache_fields, frame_in, frame_out):
+def _export_hair(ref_path_hair, cache_out_path_hair, frame_in, frame_out):
 
     # Path de la ref del hair
-    ref_path_hair = ref_path.replace("None", "hair")
+    # ref_path_hair = ref_path.replace("None", "hair")
 
     # Buscamos su top node
     refNodes = mc.referenceQuery(ref_path_hair, n=1)
     transforms = mc.ls(refNodes, type="transform")
     hair_to_export = transforms[0]
 
-    # Formamos el path de out para la cache de ese asset
-    cache_out_path_hair_template = tk.templates["maya_shot_anim_assets_abc_hair_publish"]
-    cache_out_path_hair = cache_out_path_hair_template.apply_fields(cache_fields)
+    previous_parent = mc.listRelatives(hair_to_export, allParents=True, fullPath=True)
+    mc.parent(hair_to_export, w=1)
 
-    print(f"- HAIR will be exported to {cache_out_path_hair} ----------------")
+    print(f"\t- HAIR - {hair_to_export} - will be exported to {cache_out_path_hair} ----------------")
 
     # Exportamos la geo para el pelo
-    exporters.export_alembic(hair_to_export, cache_out_path_hair, frame_in, frame_out)
+    # exporters.export_alembic(hair_to_export, cache_out_path_hair, frame_in, frame_out)
 
-    
+    # Put the obj back to its previous parent
+    mc.parent(hair_to_export, previous_parent)
+
+
 ############################################################################################
 
 def export_selected_geos():
@@ -53,6 +55,7 @@ def export_selected_geos():
     error = []
 
     selected = mc.ls(sl=1)
+    # obj = selected[0]
     for obj in selected:
 
         # Buscamos el path a la referencia actual
@@ -62,7 +65,7 @@ def export_selected_geos():
         except:
             ref_path = False
             print(f"❌ ERROR: '{obj}' no pertenece a un nodo de referencia")
-            mc.confirmDialog(message = f"❌ ERROR: '{obj}' no pertenece a un nodo de referencia")
+            mc.confirmDialog(message=f"❌ ERROR: '{obj}' no pertenece a un nodo de referencia")
 
         # Get its childs
         children = mc.listRelatives(obj, allDescendents=True, fullPath=True)
@@ -80,8 +83,14 @@ def export_selected_geos():
         id = mc.getAttr(shapes[0] + ".GUS_asset_id")
         sg_asset = sg.find_one("Asset", [["id","is",id]], ["sg_asset_type", "code"])
 
-        # Formamos el path de out para la cache de ese asset
+        # Sacamos los Fields del path
         cache_fields = cache_out_path_template.get_fields(ref_path)
+
+        # Formamos el path de HAIR
+        cache_hair_template = tk.templates["maya_shot_anim_assets_abc_hair_publish"]
+        ref_hair_path = cache_hair_template.apply_fields(cache_fields)
+
+        # Formamos el path de out para la cache de ese asset
         cache_fields["Step"] = "FLAY"
         cache_fields["Task"] = "FLay"
         cache_fields["version"] = current_version
@@ -93,11 +102,15 @@ def export_selected_geos():
         # Exportamos la geo
         previous_parent = mc.listRelatives(obj, allParents=True, fullPath=True)
         mc.parent(obj, w=1)
-        exporters.export_alembic(obj, cache_out_path, frame_in, frame_out)
+        # exporters.export_alembic(obj, cache_out_path, frame_in, frame_out)
+        print(f"Exporting GEO to --> {cache_out_path}")
 
         # Filtramos el export dependiendo del asset type
         if "CH" in sg_asset["sg_asset_type"]:
-            _export_hair(ref_path, cache_fields, frame_in, frame_out)
+
+            # Formamos el path de out para la cache de ese asset
+            cache_out_path_hair = cache_hair_template.apply_fields(cache_fields)
+            _export_hair(ref_hair_path, cache_out_path_hair, frame_in, frame_out)
 
         # Put the obj back to its previous parent
         mc.parent(obj, previous_parent)
