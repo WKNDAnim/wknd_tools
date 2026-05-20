@@ -2,7 +2,9 @@ import maya.cmds as mc
 import math
 
 class Agent:
-    def __init__(self, agent_id, locator_name, speed = 0.2):
+
+    def __init__(self, agent_id, locator_name, speed=0.2):
+
         self.id = agent_id
         self.locator = locator_name
         self.speed = speed

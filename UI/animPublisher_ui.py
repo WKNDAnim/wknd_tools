@@ -33,7 +33,11 @@ class AnimPubUI(MayaQWidgetDockableMixin, qt.QWidget):
     Se adapta automáticamente al contexto (Asset/Shot + Task).
     """
 
-    def __init__(self, parent=mayaMainWindow()):
+    def __init__(self, parent=None):
+
+        if parent is None:
+            parent = mayaMainWindow()
+
         super(AnimPubUI, self).__init__(parent)
 
         self.setWindowTitle("Animation Publisher")
