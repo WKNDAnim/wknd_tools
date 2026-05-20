@@ -56,16 +56,14 @@ BAD_ASSETS = [
 ]
 
 SHOTS_TO_PROCESS = [
-    "sq0760_sh0080",
-    "sq0760_sh0090",
-    "sq0830_sh0030",
-    "sq0830_sh0040",
-    "sq0890_sh0010",
-    "sq0890_sh0020",
-    "sq0890_sh0030",
-    "sq0890_sh0040",
-    "sq0890_sh0060",
-    "sq0890_sh0070",
+    # "sq0830_sh0030",
+    # "sq0830_sh0040",
+    # "sq0890_sh0010",
+    # "sq0890_sh0020",
+    # "sq0890_sh0030",
+    # "sq0890_sh0040",
+    # "sq0890_sh0060",
+    # "sq0890_sh0070",
 ]
 
 
@@ -186,12 +184,15 @@ def main():
         refs = mc.file(query=True, reference=True) or []
 
         for ref in refs:
-            try:
-                print(f"Cargando: {ref}")
+            if "escalerasMecanicas" in ref:
                 mc.file(ref, loadReference=True)
-                print(f"OK: {ref}")
-            except Exception as e:
-                print(f"ERROR en {ref}: {e}")
+
+            # try:
+            #     # print(f"Cargando: {ref}")
+            #     mc.file(ref, loadReference=True)
+            #     print(f"OK: {ref}")
+            # except Exception as e:
+            #     print(f"ERROR en {ref}: {e}")
 
         # First UNHIDE CHAR and PROPS groups
         # mc.setAttr("CHAR.v", True)

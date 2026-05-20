@@ -108,10 +108,9 @@ def _ref_to_standin(elem):
     ass_path = os.path.join(ass_root, asses[0])
 
     # 1. Recoger transforms
-    children = mc.listRelatives(f"|SET|{elem}", children=True, fullPath=True, type="transform") or []
-
     try:
-        mc.referenceQuery(children[0], filename=True):
+        children = mc.listRelatives(f"|SET|{elem}", children=True, fullPath=True, type="transform") or []
+        mc.referenceQuery(children[0], filename=True)
     except:
         return False
 

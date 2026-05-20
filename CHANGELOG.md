@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-05-20
+
+   - FLAY:
+      - Mini fix del Pino updater... se habia colado un ":" al final de una linea
+
 ## [1.2.0] - 2026-05-20
 
    - FLAY:
@@ -17,7 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
    - CROWDS:
       - Version prototipo del Agente para backup
-
 
 ## [1.1.27] - 2026-05-15
 
