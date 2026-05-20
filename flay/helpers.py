@@ -1,4 +1,5 @@
 import maya.cmds as mc
+import os
 from mtoa.core import createStandIn
 
 
@@ -97,3 +98,52 @@ def reload_all_references(verbose=True):
         print("=" * 50 + "\n")
 
     return resultado
+
+
+def _ref_to_standin(elem):
+
+    ass_root = rf"Z:\02Proyectos\Gus\assets\ELEM\{elem}\SURF\Shading\publish\ass"
+    asses = os.listdir(ass_root)
+    asses.sort(reverse=True)
+    ass_path = os.path.join(ass_root, asses[0])
+
+    # 1. Recoger transforms
+    children = mc.listRelatives(f"|SET|{elem}", children=True, fullPath=True, type="transform") or []
+
+    try:
+        mc.referenceQuery(children[0], filename=True):
+    except:
+        return False
+
+    transforms = []
+    for child in children:
+        t = mc.xform(child, query=True, translation=True, worldSpace=True)
+        r = mc.xform(child, query=True, rotation=True, worldSpace=True)
+        s = mc.xform(child, query=True, scale=True, worldSpace=True)
+        transforms.append({'t': t, 'r': r, 's': s})
+
+    # 2. Crear standin y replicar transforms
+    node = createStandIn()
+    mc.setAttr(node + '.mode', 3)
+    mc.setAttr(node + '.dso', ass_path, type='string')
+    standIn = mc.listRelatives(node, parent=True)[0]
+    standIn = mc.rename(standIn, 'pino_std')
+
+    for i, data in enumerate(transforms):
+        if i == 0:
+            mc.xform(standIn, t=data['t'], ro=data['r'], s=data['s'], ws=True)
+            mc.parent(standIn, elem)
+        else:
+            instance = mc.instance(standIn)[0]
+            mc.xform(instance, t=data['t'], ro=data['r'], s=data['s'], ws=True)
+            mc.parent(instance, elem)
+
+    # Delete instances and reference
+    mc.delete(children)
+
+    for i in children:
+        try:
+            ref = mc.referenceQuery(children[0], filename=True)
+        except:
+            pass
+        mc.file(ref, removeReference=True)

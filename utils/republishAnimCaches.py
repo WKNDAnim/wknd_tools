@@ -37,22 +37,35 @@ sg = tk.shotgun
 
 
 BAD_ASSETS = [
-    "baul",
-    "capibaraToy",
-    "cronometro",
+    # "baul",
+    # "capibaraToy",
+    # "cronometro",
     "escalerasMecanicas",
-    "huesoPerpetuo",
-    "panMordido",
-    "plataformaEquilibrio",
-    "porcionCesped",
-    "puertaCasaAcogida",
-    "puertaEntrenamiento",
-    "puertaEscuela",
-    "puertaGimnasio",
-    "puertaPasillo",
-    "telefonoMovil",
-    "transportin",
-    "tren"
+    # "huesoPerpetuo",
+    # "panMordido",
+    # "plataformaEquilibrio",
+    # "porcionCesped",
+    # "puertaCasaAcogida",
+    # "puertaEntrenamiento",
+    # "puertaEscuela",
+    # "puertaGimnasio",
+    # "puertaPasillo",
+    # "telefonoMovil",
+    # "transportin",
+    # "tren"
+]
+
+SHOTS_TO_PROCESS = [
+    "sq0760_sh0080",
+    "sq0760_sh0090",
+    "sq0830_sh0030",
+    "sq0830_sh0040",
+    "sq0890_sh0010",
+    "sq0890_sh0020",
+    "sq0890_sh0030",
+    "sq0890_sh0040",
+    "sq0890_sh0060",
+    "sq0890_sh0070",
 ]
 
 
@@ -85,7 +98,7 @@ def find_approved_anim_tasks():
         ["entity", "type_is", "Shot"],
         ["content", "is", "Animation"],
         ["sg_status_list", "is", "apppbl"],
-        ["entity.Shot.code", "is", "sq0040_sh0010"],
+        ["entity.Shot.code", "in", SHOTS_TO_PROCESS],
     ]
 
     queries = ["entity.Shot.code"]
@@ -166,7 +179,19 @@ def main():
 
         shutil.copy2(publish_path, work_path)
 
-        mc.file(work_path, open=True, f=True)
+        # mc.file(work_path, open=True, f=True)
+        mc.file(work_path, open=True, f=True, loadReferenceDepth="none")
+
+        # Cargamos las refs
+        refs = mc.file(query=True, reference=True) or []
+
+        for ref in refs:
+            try:
+                print(f"Cargando: {ref}")
+                mc.file(ref, loadReference=True)
+                print(f"OK: {ref}")
+            except Exception as e:
+                print(f"ERROR en {ref}: {e}")
 
         # First UNHIDE CHAR and PROPS groups
         # mc.setAttr("CHAR.v", True)
@@ -210,6 +235,8 @@ def main():
 
             geo_to_export = (asset['namespace'] + ':geo')
             abc_path = template_anim_cache.apply_fields(scene_fields)
+
+            print(f"EXPORTING ALEMBIIIIIC ------------ {abc_path}-------------")
 
             exporters.export_alembic(geo_to_export, abc_path, frame_in, frame_out)
 

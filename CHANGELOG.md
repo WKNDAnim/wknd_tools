@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-05-20
+
+   - FLAY:
+      - Añadimos un helper para cambiar la ref de los pinos a standins
+
+   - REPUBLISH ANIM CACHES:
+      - Fix de un par de cosas para poder exportar caches en Standalone.
+
+   - CROWDS:
+      - Version prototipo del Agente para backup
+
+
 ## [1.1.27] - 2026-05-15
 
    - FLAY:
