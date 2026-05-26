@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-05-26
+
+   - FLAY:
+      - Fix export caches. Estaban comentados los comandos de export...
+   
+   - CROWDS:
+      - WIP --> Añadimos las clases de Agente y NavGrid
+
 ## [1.2.1] - 2026-05-20
 
    - FLAY:

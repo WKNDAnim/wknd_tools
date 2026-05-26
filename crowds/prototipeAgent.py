@@ -19,16 +19,12 @@ class Agent:
         self.rotation_speed = 0.5
         self.wall_radius = 20.0
         self.wall_strength = 10.0
-                
-        
-        
+
         # get initial position
-        
-        pos = mc.xform(locator_name, q=True, 
-                         worldSpace=True, translation=True)
+        pos = mc.xform(locator_name, q=True, worldSpace=True, translation=True)
         self.current_pos = [pos[0], pos[1], pos[2]]
-        self.start_position = self.current_pos[:] # esto es una copia real con [:]
-        
+        self.start_position = self.current_pos[:]  # esto es una copia real con [:]
+
     def reset_to_start(self, frame_in , frame_out):
         
         # Initial cleanup para borrar keys y mantener la posicion inicial
@@ -36,7 +32,7 @@ class Agent:
         mc.currentTime(frame_in)
         mc.cutKey(self.locator, clear=True, time=(frame_in, frame_out))
         mc.xform(self.locator, translation=self.start_position, ws=True)
-        
+
     def update(self, frame, other_positions=None, walls=None, height=None):
         if self.state == 'walk':
             self.walk_to_target(frame, other_positions, walls, height)
