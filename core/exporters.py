@@ -7,6 +7,7 @@ import importlib
 importlib.reload(shading_get_textures_from_sg)
 import json
 import maya.app.renderSetup.model.renderSetup as rsm
+import maya.app.renderSetup.model.renderSetupPreferences as userPrefs
 
 
 def export_maya_scene(file_path, file_type='mayaAscii'):
