@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-05-27
+
+   - FLAY:
+      - Helpers --> Arreglamos el cambio a STD de los pinos
+
+   - Exporters:
+      - Añadimos `export_render_setup()` para exportar el json de render
+
+   - Publish Version:
+      - Lighting --> Exportamos el grupo LIGHTS como LightSet en ma y el Render Setup (Layers + Settings) como Json
+
+
 ## [1.2.2] - 2026-05-26
 
    - FLAY:
