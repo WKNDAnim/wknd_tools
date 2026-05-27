@@ -5,6 +5,8 @@ import glob
 from ..utils import shading_get_textures_from_sg, scene_usd_export_utils
 import importlib
 importlib.reload(shading_get_textures_from_sg)
+import json
+import maya.app.renderSetup.model.renderSetup as rsm
 
 
 def export_maya_scene(file_path, file_type='mayaAscii'):
@@ -270,6 +272,21 @@ def export_usd(publish_path):
 
     return True
 
+
+def export_render_setup(output_path):
+    rs = rsm.instance()
+    notes = rs.getNotes() or ''
+
+    with open(output_path, "w+") as f:
+        json.dump(
+            rs.encode(notes, userPrefs.ExportRenderSettingsAOVs.isEnabled()),
+            fp=f,
+            indent=2,
+            sort_keys=True,
+            separators=(',', ': ')
+        )
+
+    print(f"[RenderSetup] Exportado: {output_path}")
 
 # PRIVATE ##############################
 

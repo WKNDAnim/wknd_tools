@@ -179,13 +179,15 @@ class Publisher:
         # LIGHTING
         elif self.context.task['name'] == 'Lighting':
 
-            # Publish version with frames from folder to approve lighting
+            # Export Render Setup 
+            template_json = self.tk.templates["maya_shot_lightSet_publish"]
+            output_path_json = template_json.apply_fields(self.scene_fields)
 
-            # Publish version with rendered frames to approve shot
+            output_path = template_json.apply_fields(self.scene_fields)
+            exporters.export_render_setup(output_path_json)
 
             # Export lightSets
-
-            print('TO BE DISCUSSED WITH NUBOYANA')
+            self._publish_lightSets()
 
         #######################################
         # Export maya publish scene as backup #
@@ -417,6 +419,30 @@ class Publisher:
             self.log("✓ USD Published!!\n")
         else:
             self.log(f"❌ ERROR: USD not exported...")
+
+    def _publish_lightSets(self):
+
+        self.log("Publish Light Set -----------")
+
+        # Export current work scene as publish maya scene
+        template = self.tk.templates["maya_shot_lightSet_publish"]
+        ma_asset_path = template.apply_fields(self.scene_fields)
+
+        # Create folder if needed
+        if not os.path.exists(os.path.dirname(ma_asset_path)):
+            os.makedirs(os.path.dirname(ma_asset_path))
+
+        # Choose what is going to be exported on maya file
+        ma_export_object = "LIGHTS"
+
+        # Export
+        exporters.export_maya_asset(ma_export_object, ma_asset_path)
+
+        # Register Publish
+        self._register_publish_to_version(self.context, ma_asset_path, self.scene_fields["version"], "Light Set", version_entity=self.version)
+        self.results['published_files'].append(ma_asset_path)
+
+        self.log("✓ Light Set Published!!\n")
 
     def _create_lgt_from_flay(self):
 
