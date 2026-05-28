@@ -365,17 +365,17 @@ def _bake_camera(main_camera, start_frame, end_frame):
 
     for attr in camera_attrs:
 
-            source_attr = f"{main_camera_shape}.{attr}"
-            target_attr = f"{baked_camera_shape}.{attr}"
+        source_attr = f"{main_camera_shape}.{attr}"
+        target_attr = f"{baked_camera_shape}.{attr}"
 
-            # Verificar que el atributo existe y se puede conectar
-            if mc.objExists(source_attr) and mc.objExists(target_attr):
-                # Verificar si el atributo no está ya conectado o bloqueado
-                if not mc.listConnections(target_attr, source=True, destination=False):
-                    try:
-                        mc.connectAttr(source_attr, target_attr, force=True)
-                    except:
-                        print(f"No se pudo conectar: {attr}")
+        # Verificar que el atributo existe y se puede conectar
+        if mc.objExists(source_attr) and mc.objExists(target_attr):
+            # Verificar si el atributo no está ya conectado o bloqueado
+            if not mc.listConnections(target_attr, source=True, destination=False):
+                try:
+                    mc.connectAttr(source_attr, target_attr, force=True)
+                except:
+                    print(f"No se pudo conectar: {attr}")
 
     # Bakear las transformaciones del transform
     mc.bakeResults(
