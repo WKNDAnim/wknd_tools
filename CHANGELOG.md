@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.5] - 2026-05-28
+
+   - FLAY:
+      - ExportCaches --> Añadimos una función para exportar cámaras en FLAY
+
 ## [1.2.4] - 2026-05-27
 
    - PUBLISH VERSION:
