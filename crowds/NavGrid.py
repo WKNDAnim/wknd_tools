@@ -13,7 +13,7 @@ class NavGrid:
         self.cols = 0
         self.rows = 0
         self.grid = []
-        self.agent_radius = 10
+        self.agent_radius = 3  # Tamaño que expandimos los obstaculos para que no se choque el agente
 
     def _world_to_grid(self, wx, wz):
         """Convierte posición en Maya a coordenadas de celda."""
@@ -29,8 +29,8 @@ class NavGrid:
 
     def bake_from_plane(self, plane_name):
         """Calcula origin, width y height a partir del bounding box de un plano Maya."""
-        bbox = mc.exactWorldBoundingBox(plane_name)
-        # bbox = [xmin, ymin, zmin, xmax, ymax, zmax]
+
+        bbox = mc.exactWorldBoundingBox(plane_name) # bbox = [xmin, ymin, zmin, xmax, ymax, zmax]
 
         self.origin = [bbox[0], bbox[1], bbox[2]]
         width  = bbox[3] - bbox[0]  # xmax - xmin
@@ -165,10 +165,10 @@ class NavGrid:
         """Elimina waypoints intermedios si hay línea de visión directa."""
         if len(path) <= 2:
             return path
-        
+
         smoothed = [path[0]]
         current = 0
-        
+
         while current < len(path) - 1:
             # Intentamos llegar al punto más lejano posible con visión directa
             furthest = current + 1
@@ -177,14 +177,14 @@ class NavGrid:
                     furthest = i
             smoothed.append(path[furthest])
             current = furthest
-        
+
         return smoothed
 
     def _has_line_of_sight(self, a, b):
         """Comprueba si hay visión directa entre dos posiciones del mundo."""
         col_a, row_a = self._world_to_grid(a[0], a[2])
         col_b, row_b = self._world_to_grid(b[0], b[2])
-        
+
         # Algoritmo de Bresenham para recorrer las celdas entre A y B
         dx = abs(col_b - col_a)
         dz = abs(row_b - row_a)
@@ -192,7 +192,7 @@ class NavGrid:
         sx = 1 if col_b > col_a else -1
         sz = 1 if row_b > row_a else -1
         err = dx - dz
-        
+
         while True:
             if not self.is_walkable(x, z):
                 return False
@@ -206,7 +206,7 @@ class NavGrid:
                 err += dx
                 z += sz
 
-    def interpolate_path(self, path, samples_per_segment=10):
+    def interpolate_path_old(self, path, samples_per_segment=10):
         """
         Interpola el camino con Catmull-Rom.
         samples_per_segment -- cuántos puntos generar entre cada par de waypoints.
@@ -231,6 +231,58 @@ class NavGrid:
                 t3 = t2 * t
                 
                 # Fórmula Catmull-Rom para cada eje
+                def catmull(a, b, c, d):
+                    return 0.5 * (
+                        2*b +
+                        (-a + c) * t +
+                        (2*a - 5*b + 4*c - d) * t2 +
+                        (-a + 3*b - 3*c + d) * t3
+                    )
+                
+                x = catmull(p0[0], p1[0], p2[0], p3[0])
+                y = catmull(p0[1], p1[1], p2[1], p3[1])
+                z = catmull(p0[2], p1[2], p2[2], p3[2])
+                result.append([x, y, z])
+        
+        result.append(path[-1])
+        return result
+
+    def interpolate_path(self, path, agent_speed, frames_per_segment=None):
+        """
+        Interpola el camino con Catmull-Rom.
+        Calcula automáticamente los samples según la velocidad del agente.
+        """
+        if len(path) < 2:
+            return path
+        
+        if frames_per_segment is None:
+            # Calculamos la distancia media entre waypoints
+            total_dist = 0
+            for i in range(len(path) - 1):
+                dx = path[i+1][0] - path[i][0]
+                dz = path[i+1][2] - path[i][2]
+                total_dist += (dx**2 + dz**2) ** 0.5
+            avg_dist = total_dist / (len(path) - 1)
+            
+            # Cuántos frames necesita el agente para recorrer esa distancia
+            # frames_per_segment = max(2, int(avg_dist / agent_speed))
+            frames_per_segment = max(2, int(self.cell_size / agent_speed))
+        
+        # Catmull-Rom
+        extended = [path[0]] + path + [path[-1]]
+        result = []
+        
+        for i in range(1, len(extended) - 2):
+            p0 = extended[i-1]
+            p1 = extended[i]
+            p2 = extended[i+1]
+            p3 = extended[i+2]
+            
+            for j in range(frames_per_segment):
+                t = j / frames_per_segment
+                t2 = t * t
+                t3 = t2 * t
+                
                 def catmull(a, b, c, d):
                     return 0.5 * (
                         2*b +

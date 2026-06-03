@@ -16,7 +16,6 @@ VEGETATION_LIST = [
     ]
 
 
-
 def get_reference_top_node(ref_node):
     """Obtiene el transform top level de una referencia."""
     try:
@@ -126,7 +125,7 @@ def get_last_shading_reference(reference_node):
 
     file_name = mc.referenceQuery(reference_node, filename=True)
     asset_name = file_name.split('/')[5]
-
+    
     print(f"asset_name --> {asset_name}")
 
     if "ELEM" in file_name:
@@ -137,7 +136,7 @@ def get_last_shading_reference(reference_node):
     print(f"surface_folder --> {surface_folder}")
 
     surface_file = sorted(os.listdir(surface_folder))[-1]
-    surface_file_path = os.path.join(surface_folder , surface_file)
+    surface_file_path = os.path.join(surface_folder, surface_file)
     return surface_file_path
 
 
