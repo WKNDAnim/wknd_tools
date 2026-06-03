@@ -297,11 +297,14 @@ def main():
                 succeed.append(shot_name)
                 sg.update("Shot", shot_entity["id"], {"sg_set_json_exported": True})
 
-            logger.info("---------- Shot Done ----------")
-
             # Exportamos
-            path_tendido_electrico = rf'Z:\02Proyectos\Gus\sequences\{mastershot_fields["Sequence"]}\{shot_name}\ANM\Animation\publish\caches\_extras\{shot_name}_redElectrica.abc'
-            export_tendidoElectrico(path_tendido_electrico, start_frame, end_frame)
+            try:
+                path_tendido_electrico = rf'Z:\02Proyectos\Gus\sequences\{mastershot_fields["Sequence"]}\{shot_name}\ANM\Animation\publish\caches\_extras\{shot_name}_redElectrica.abc'
+                export_tendidoElectrico(path_tendido_electrico, start_frame, end_frame)
+            except:
+                logger.info(f"- No exportamos el tendido eléctrico para este shot")
+
+            logger.info("---------- Shot Done ----------")
 
         logger.info(f" ** Succeed --> {succeed}")
 

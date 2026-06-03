@@ -17,6 +17,7 @@ except:
 
 import maya.cmds as mc
 mc.loadPlugin("AbcImport")
+mc.loadPlugin('mtoa')
 
 import wknd_tools
 from wknd_tools.utils import json_set, createColissionRenderLayer, reconnect_shaders
@@ -841,8 +842,7 @@ def load_ch_from_geo(cache_top, asset_name, cache_fields):
     if os.path.exists(hair_path):
 
         # CARGAMOS LA GEO DEL HAIR
-
-        ref_node_h = mc.file(hair_path, r=True)
+        ref_node_h = mc.file(hair_path, r=True, ns=f"{asset_name}_hair")
         new_objects_h = mc.referenceQuery(ref_node_h, nodes=True)
         new_transforms_h = mc.ls(new_objects_h, type='transform', long=True)
         hair_shapes = mc.ls(new_objects_h, type='mesh')
@@ -873,7 +873,7 @@ def load_ch_from_geo(cache_top, asset_name, cache_fields):
 
         print(groom_paths)
 
-        ref_node_g = mc.file(groom_paths[0], r=True, ns=f"{asset_name}")  # {copy_n or ''}")
+        ref_node_g = mc.file(groom_paths[0], r=True, ns=f"{asset_name}_groom")  # {copy_n or ''}")
 
         print("\t\t- Pelo referenciado")
 

@@ -91,7 +91,7 @@ def create_sequence_playblast(output_video):
 
     start = mc.getAttr(sequencer + '.minFrame')
     end = mc.getAttr(sequencer + '.maxFrame')
-    
+
     capture_info = capture.capture_viewport_sequence(start, end, sequence_capture=True)
 
     print(f"CAPTURE INFO --> {capture_info}")
