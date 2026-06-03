@@ -501,7 +501,11 @@ def get_characters_and_props():
                     name = child
 
                 ref_node = mc.referenceQuery(child, referenceNode=True)
-                name, variant, number = _get_instance_number(namespace)
+                if namespace:
+                    name, variant, number = _get_instance_number(namespace)
+                else:
+                    variant = "scene"
+                    number = None
 
                 results['props'].append({
                     'name': name,
@@ -545,6 +549,8 @@ def _backup_current_scene_temp(scene_path):
 
 def _get_instance_number(namespace):
     "Dado un string del tipo 'cono_scene1' devuelve (cono, scene, 1)"
+
+    print(f"- Getting instance number of --> {namespace}")
 
     if ":" in namespace:
         name = namespace.split(":")[-1]

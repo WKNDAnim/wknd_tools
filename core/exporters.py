@@ -275,17 +275,24 @@ def export_usd(publish_path):
 
 
 def export_render_setup(output_path):
+
+    print("Exporting render setuuuup...")
     rs = rsm.instance()
     notes = rs.getNotes() or ''
 
     with open(output_path, "w+") as f:
         json.dump(
             rs.encode(notes, userPrefs.ExportRenderSettingsAOVs.isEnabled()),
-            fp=f,
-            indent=2,
-            sort_keys=True,
-            separators=(',', ': ')
+            f,
+            indent=2
         )
+        # json.dump(
+        #     rs.encode(notes, userPrefs.ExportRenderSettingsAOVs.isEnabled()),
+        #     fp=f,
+        #     indent=2,
+        #     sort_keys=True,
+        #     separators=(',', ':')
+        # )
 
     print(f"[RenderSetup] Exportado: {output_path}")
 

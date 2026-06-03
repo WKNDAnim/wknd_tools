@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.6] - 2026-06-03
+
+   - SEND FLAY RENDER:
+      - Nos aseguramos de que el plugin de Arnold `mtoa` siempre esté cargado antes de ejecutar el script
+      - Ponemos namespace al hair y el groom de las caches de personajes
+
+   - SET AUTO EXPORTER:
+      - Se añade un try para el esport del Tendido Electrico
+
+   - LIGHTING:
+      - Move_FML_nuboyana --> Hacemos que la escena copiada a su sitio tenga name = nuboyana
+      - Helpers --> Añadimos para esconder los proxies de pelo de humanos
+
+   - FLAY:
+      - Helpers:
+         - Hide Things --> Añadimos KEYWORKDS y AVOID
+
+   - ANIM PUBLISHER:
+      - Si no hay "namespace" --> variante = scene | instance = None
+
+   - EXPORTERS:
+      - Simplificamos el json.dump() al exportar el Render Setup
+
 ## [1.2.5] - 2026-05-28
 
    - FLAY:

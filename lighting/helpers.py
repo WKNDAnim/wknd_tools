@@ -8,8 +8,11 @@ from mtoa.core import createOptions
 import mtoa.ui.arnoldmenu as arnoldmenu
 
 
+OCIO_FILE = r"\\192.168.23.2\DataCenter\05Framework\packages\resources\config.ocio"
+
 ######################################
 # PUBLIC
+
 
 def _createRenderLayers():
 
@@ -27,7 +30,6 @@ def _createRenderLayers():
     col.getSelector().setFilterType(1)
 
     col_lgt = bg_layer.createCollection("Light")
-    # col_lgt.getSelector().setPattern("LGT*")
     col_lgt.getSelector().setFilterType(1)
 
     ########
@@ -42,8 +44,18 @@ def _createRenderLayers():
     col.getSelector().setFilterType(1)
 
     col_lgt = char_layer.createCollection("Light")
-    # col_lgt.getSelector().setPattern("LGT*")
     col_lgt.getSelector().setFilterType(1)
+
+    col_charset = char_layer.createCollection("CharSet")
+    shapes_col_charset = col_charset.createCollection("Shapes")
+    shapes_col_charset.getSelector().setPattern("*")
+    abs_ov = shapes_col_charset.createOverride("aiMatte", override.AbsOverride.kTypeId)
+    abs_ov.setAttributeName("aiMatte")
+    nodes = mc.ls("SET*", dagObjects=True, shapes=True)
+    if nodes:
+        plug = mc.ls(nodes[0] + ".aiMatte")[0]
+        abs_ov.finalize(plug)
+        abs_ov.setAttrValue(True)
 
     ######
     # SH #
@@ -52,9 +64,12 @@ def _createRenderLayers():
     sh_layer = renderSetup.createRenderLayer("SH")
 
     # Collection
-    col = sh_layer.createCollection("Shadows")
+    col = sh_layer.createCollection("ShadowCaster")
     col.getSelector().setPattern("ANIM*")
     col.getSelector().setFilterType(1)
+
+    # Collection
+    col_geo = sh_layer.createCollection("ShadowsReceiver")
 
     # Subcollection shapes
     shapes_col = col.createCollection("Shapes")
@@ -71,7 +86,6 @@ def _createRenderLayers():
         abs_ov.setAttrValue(False)
 
     col_lgt = sh_layer.createCollection("Light")
-    # col_lgt.getSelector().setPattern("LGT*")
     col_lgt.getSelector().setFilterType(1)
 
     #########
@@ -100,34 +114,12 @@ def _createRenderLayers():
         abs_ov.setAttrValue(True)
 
     col_lgt = volum_layer.createCollection("Light")
-    # col_lgt.getSelector().setPattern("LGT*")
     col_lgt.getSelector().setFilterType(1)
 
-    # # Collection CHAR
-    # char_col = volum_layer.createCollection("Char")
-    # char_col.getSelector().setPattern("CHAR*")
-    # char_col.getSelector().setFilterType(1)
 
-    # # Subcollection shapes para aiMatte
-    # char_shapes = char_col.createCollection("Shapes")
-    # char_shapes.getSelector().setFilterType(2)
-    # char_shapes.getSelector().setPattern("*")
-
-    # # Crear AbsOverride
-    # abs_ov = char_shapes.createOverride("aiMatte", override.AbsOverride.kTypeId)
-    # abs_ov.setAttributeName("aiMatte")
-    # nodes = mc.ls("SET*", dagObjects=True, shapes=True)
-    # if nodes:
-    #     plug = mc.ls(nodes[0] + ".aiMatte")[0]
-    #     abs_ov.finalize(plug)
-    #     abs_ov.setAttrValue(True)
-
-
-def _createRenderLayersFromJson():
+def _createRenderLayersFromJson(path_to_json):
 
     renderSetup = rs.instance()
-
-    path_to_json = r"C:\Users\aferraz\Documents\maya\RSTemplates\test.json"
 
     # behavior controla qué hacer si ya existen layers con el mismo nombre
     renderSetup.importAllFromFile(
@@ -139,17 +131,24 @@ def _createRenderLayersFromJson():
 
 def _hideThings():
 
-    all_refs = mc.ls(type='reference')
+    keywords = ['muzzlehair', 'eyebrowhair', 'proxy', 'sclera', '_scalp', '_hair', 'eyebrow', 'eyelash']
+    avoid = ["groom"]
 
+    all_refs = mc.ls(type='reference')
     for ref_node in all_refs:
 
-        objects = mc.referenceQuery(ref_node, nodes=True)
-        transforms = mc.ls(objects, type='transform', long=True)
-        cache_top = [t for t in transforms if not mc.listRelatives(t, parent=True)][0]
+        # Miramos solo los que necesitamos
+        ref_path = mc.referenceQuery(ref_node, f=True)
+        if any(i in ref_path.lower() for i in avoid):
+            continue
+
+        # Pedimos los transforms de la
+        new_objects = mc.referenceQuery(ref_node, nodes=True)
+        new_transforms = mc.ls(new_objects, type='transform', long=True)
 
         # Hide de los transforms que no necesitamos
-        for t in transforms:  #mc.listRelatives(cache_top, ad=1, c=1, type='transform'):
-            if 'hair' in t.lower() or 'proxy' in t.lower() or "sclera" in t.lower():
+        for t in new_transforms:
+            if any(kw in t.lower() for kw in keywords):
                 mc.setAttr(t + '.v', 0)
 
 
@@ -224,17 +223,16 @@ def _setRenderSettings():
     mc.setAttr("defaultRenderGlobals.endFrame", end_frame)
 
     # Color Management
-    ocio_file = r"\\192.168.23.2\DataCenter\05Framework\packages\resources\config.ocio"
-    mc.colorManagementPrefs(e=True, configFilePath=ocio_file)
+    mc.colorManagementPrefs(e=True, configFilePath=OCIO_FILE)
 
     # Set AOVs
-    _set_aovs()
+    __set_aovs()
 
 
 ######################################
 # PRIVATE
 
-def _set_aovs():
+def __set_aovs():
 
     # First Clean ourshelves
     __clear_all_aovs()

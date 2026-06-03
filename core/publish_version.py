@@ -179,11 +179,12 @@ class Publisher:
         # LIGHTING
         elif self.context.task['name'] == 'Lighting':
 
-            # Export Render Setup 
+            self.log("Exporting Lighting stuff...")
+
+            # Export Render Setup
             template_json = self.tk.templates["maya_shot_lightSet_publish"]
             output_path_json = template_json.apply_fields(self.scene_fields)
 
-            output_path = template_json.apply_fields(self.scene_fields)
             exporters.export_render_setup(output_path_json)
 
             # Export lightSets

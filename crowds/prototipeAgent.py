@@ -40,10 +40,10 @@ class Agent:
             self.idle(frame, height)
         elif self.state == 'action':
             self.action(frame)
-            
+    
     def set_state(self , new_state):
         self.state = new_state
-        
+
     def idle(self,frame, height):
         self._write_keyframe(frame , height)
         
@@ -83,9 +83,7 @@ class Agent:
             print(f"seek: {seek_x:.4f}, {seek_z:.4f}")
             print(f"wall force: {wall_x:.4f}, {wall_z:.4f}")
             print(f"suma total z: {seek_z + avoid_z + wall_z:.4f}")
-            
 
-            
             # Suma de fuerzas
             self.current_pos[0] += seek_x + avoid_x + wall_x
             self.current_pos[1] += (dy/magnitude) * self.speed
@@ -112,10 +110,7 @@ class Agent:
                     # Rotacion basada en el target
                     target_ry = math.degrees(math.atan2(dx, dz))
                     self.ry = self._lerp_angle(self.ry, target_ry, self.rotation_speed)
-                    
-            
-            
-        
+
         else:
             # Ha llegado al waypoint actual
             if self.path and not self.path.is_complete():

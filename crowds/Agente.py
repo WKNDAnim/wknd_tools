@@ -4,32 +4,42 @@ import math
 
 class Agent:
 
-    def __init__(self, agent_id, locator_name, speed=0.2, forward_axis="+Z"):
-        self.id = agent_id
-        self.locator = locator_name
-        self.speed = speed
-        self.forward_axis = forward_axis
-        self.ry = 0
-        self.target = None
-        self.camino = None
+    def __init__(self, agent_id, locator_name, speed=0.2, move_ranges=None, forward_axis="+Z"):
+
+        self.id = agent_id  # ID
+        self.locator = locator_name  # Name of the Transform object in Maya
+        self.move_ranges = move_ranges or []
+        self.speed = speed  # Velocidad
+        self.forward_axis = forward_axis  # Dirección frontal
+        self.ry = 0  # Rotación en el eje Y
+        self.target = None  # Punto de destino
+        self.path = None
         self.prev_pos = None
-        self.waypoints = [] 
+        self.waypoints = []
         self.waypoint_index = 0
+
         # Get initial position
         pos = mc.xform(locator_name, q=True, worldSpace=True, translation=True)
         self.current_pos = [pos[0], pos[1], pos[2]]
-        self.start_position = self.current_pos[:] # esto es una copia real con [:]
+        self.start_position = self.current_pos[:]  # esto es una copia real con [:]
+
+    def setTarget(self, target):
+        self.target = target
 
     def reset_to_start(self, frame_in, frame_out):
-        # Initial cleanup para borrar keys y mantener la posicion inicial
+        """  Initial cleanup para borrar keys y mantener la posicion inicial """
         mc.currentTime(frame_in)
         mc.cutKey(self.locator, clear=True, time=(frame_in, frame_out))
         mc.xform(self.locator, translation=self.start_position, ws=True)
 
     def set_path(self, waypoints):
         """Recibe la lista de posiciones devuelta por find_path."""
-        self.camino = waypoints
+        self.path = waypoints
         self.waypoint_index = 0
+
+    def set_move_range(self, range):
+
+        self.move_ranges.append(range)
 
     def get_current_target(self):
         if self.waypoint_index < len(self.waypoints):
@@ -37,6 +47,7 @@ class Agent:
         return None
 
     def has_reached(self, target_pos, threshold=0.1):
+        """Calculamos la direccion"""
         dx = target_pos[0] - self.current_pos[0]
         dy = target_pos[1] - self.current_pos[1]
         dz = target_pos[2] - self.current_pos[2]
@@ -44,14 +55,15 @@ class Agent:
         return dist < threshold
 
     def __calculate_direction(self, target_pos):
-        # Calculamos la direccion
+        """Calculamos la dirección"""
         dx = target_pos[0] - self.current_pos[0]
         dy = target_pos[1] - self.current_pos[1]
         dz = target_pos[2] - self.current_pos[2]
 
-        return dx,dy,dz
+        return dx, dy, dz
 
-    def get_rotation_y(self, target_pos):
+    def __calculate_rotation_y(self, target_pos):
+        """Calculamos la rotación"""
         dx = target_pos[0] - self.current_pos[0]
         dz = target_pos[2] - self.current_pos[2]
         angle = math.degrees(math.atan2(dx, dz))
@@ -59,10 +71,24 @@ class Agent:
         offsets = {"+Z": 0, "-Z": 180, "+X": -90, "-X": 90}
         return angle + offsets.get(self.forward_axis, 0)
 
-    def move(self, target_pos):
-        dx,dy,dz = self.__calculate_direction(target_pos)
+    def calculate_speed(self, duration):
+        """
+        Calcula la speed necesaria para recorrer el camino en exactamente 'duration' frames.
+        """
+        # Distancia total del camino
+        total_dist = 0
+        for i in range(len(self.path) - 1):
+            dx = self.path[i+1][0] - self.path[i][0]
+            dz = self.path[i+1][2] - self.path[i][2]
+            total_dist += (dx**2 + dz**2) ** 0.5
 
-        self.ry = self.get_rotation_y(target_pos)
+        return total_dist / duration
+
+    def move(self, target_pos):
+
+        dx, dy, dz = self.__calculate_direction(target_pos)
+        target_ry= self.__calculate_rotation_y(target_pos)
+        self.smooth_rotation(target_ry, factor=0.2)
 
         # Guardamos la posición anterior
         self.prev_pos = self.current_pos
@@ -74,8 +100,8 @@ class Agent:
 
     def _set_key(self, frame):
         # Seteamos la nueva posición
-        mc.xform(self.locator, t = self.current_pos, ws=True)
-        mc.setKeyframe(self.locator + '.t' , time=frame) 
+        mc.xform(self.locator, t=self.current_pos, ws=True)
+        mc.setKeyframe(self.locator + '.t', time=frame) 
 
     def _write_keyframe(self, frame, height):
 
@@ -87,6 +113,14 @@ class Agent:
         mc.setKeyframe(self.locator + '.t' , time=frame)
         mc.setKeyframe(self.locator + '.r' , time=frame)
 
+    def smooth_rotation(self, target_ry, factor=0.1):
+        """
+        Interpola suavemente la rotación actual hacia target_ry.
+        factor -- 0.0 = no gira nunca, 1.0 = gira instantáneo
+        """
+        # Calculamos la diferencia más corta entre los dos ángulos
+        diff = (target_ry - self.ry + 180) % 360 - 180
+        self.ry += diff * factor
 
 # #############################
 

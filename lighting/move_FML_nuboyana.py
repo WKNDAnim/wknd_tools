@@ -33,13 +33,14 @@ sg = tk.shotgun
 
 ###########################
 
+
 def _search_shots_to_process():
 
     print("- Buscando shots...")
 
     # Get those with Previs Aproved
     filters_task = [
-        # ["entity.Shot.code", "is", "sq0260_sh0010"],
+        # ["entity.Shot.code", "is", "sq0260_sh0040"],
         ["entity.Shot.code", "not_contains", "master_"],
         ["content", "is", "Lighting"],
         ["sg_status_list", "is", "psr"],
@@ -57,9 +58,9 @@ def _search_shots_to_process():
         print(f"\t  + {len(tasks)} shots encontrados :)")
         return tasks
     else:
-        print("ERROR: No se han encontrado shots -------------------------------------------------------")
+        print("ERROR: No se han encontrado shots ----------------------------")
         return False
-    
+
 
 def _find_shot_paths(shot):
 
@@ -77,7 +78,7 @@ def _find_shot_paths(shot):
 
     # MAYA SCENES
     template_pt_maya = "Z:/02Proyectos/Gus/sequences/{seq}/{shot}/RND/Lighting/publish/maya/images/workfileLighting"
-    template_work_maya = "Z:/02Proyectos/Gus/sequences/{seq}/{shot}/LGT/Lighting/work/maya/{shot}_scene_Lighting_v{version:03d}.ma"
+    template_work_maya = "Z:/02Proyectos/Gus/sequences/{seq}/{shot}/LGT/Lighting/work/maya/{shot}_nuboyana_Lighting_v{version:03d}.ma"
 
     # Buscamos la root
     maya_pt_root = template_pt_maya.format(seq=sequence_name, shot=shot_name)
@@ -101,8 +102,8 @@ def _find_shot_paths(shot):
     paths["nuboyana"]["maya_scene"] = maya_pt_path
 
     # WKND work
-    maya_work_path = template_work_maya.format(seq=sequence_name, 
-                                               shot=shot_name, 
+    maya_work_path = template_work_maya.format(seq=sequence_name,
+                                               shot=shot_name,
                                                version=version)
     paths["work"]["maya_scene"] = maya_work_path
 
@@ -112,7 +113,7 @@ def _find_shot_paths(shot):
 
     # RENDERS
     template_pt_renders = "Z:/02Proyectos/Gus/sequences/{seq}/{shot}/RND/Lighting/publish/maya/images/"
-    template_work_renders = "Z:/02Proyectos/Gus/sequences/{seq}/{shot}/LGT/Lighting/work/maya/images/{shot}_scene_Lighting_v{version:03d}"
+    template_work_renders = "Z:/02Proyectos/Gus/sequences/{seq}/{shot}/LGT/Lighting/work/maya/images/{shot}_nuboyana_Lighting_v{version:03d}"
 
     # Formamos la root de work
     renders_work_root = template_work_renders.format(seq=sequence_name, shot=shot_name, version=version)
@@ -150,7 +151,7 @@ def copy_renders(paths):
         # Formamos la carpeta del LAYER
         layer_folder_pt = os.path.join(renders_pt_root, layer)
         print(f"\t\t\t - layer_folder_pt --> {layer_folder_pt}")
-        
+
         # Buscamos la última version dentro de la LAYER
         versiones = os.listdir(layer_folder_pt)
         versiones.sort(reverse=True)
@@ -162,7 +163,7 @@ def copy_renders(paths):
             renderLayer_name = layer.replace("renderLighting", "").replace("_beauty", "")
         else:
             renderLayer_name = layer
-        
+
         # Formamos la carpeta de la versión
         layer_folder_work = os.path.join(renders_work_root, renderLayer_name)
         print(f"\t\t\t - layer_folder_work --> {layer_folder_work}")
@@ -219,6 +220,7 @@ def repath_references():
     print("\n" + "=" * 60)
     print(f"Reemplazadas: {replaced} | Sin cambios: {skipped}")
     print("=" * 60)
+
 
 # Repath Textures
 def get_texture_nodes_from_sg(sg):
@@ -354,6 +356,7 @@ def main():
     maya.standalone.uninitialize()
 
 ############################################
+
 
 if __name__ == "__main__":
     main()
