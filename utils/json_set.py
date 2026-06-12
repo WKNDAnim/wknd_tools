@@ -125,13 +125,15 @@ def get_last_shading_reference(reference_node):
 
     file_name = mc.referenceQuery(reference_node, filename=True)
     asset_name = file_name.split('/')[5]
-    
+
     print(f"asset_name --> {asset_name}")
 
     if "ELEM" in file_name:
         surface_folder = 'Z:/02Proyectos/gus/assets/ELEM/' + asset_name + '/SURF/Shading/publish/caches/'
     elif "PRP" in file_name:
         surface_folder = 'Z:/02Proyectos/gus/assets/PRP/' + asset_name + '/SURF/Shading/publish/caches/'
+    elif "CHE" in file_name:
+        surface_folder = 'Z:/02Proyectos/gus/assets/CHE/' + asset_name + '/SURF/Shading/publish/caches/'
 
     print(f"surface_folder --> {surface_folder}")
 
