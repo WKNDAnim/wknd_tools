@@ -549,20 +549,23 @@ class Publisher:
         # Copy to LGT #
         ###############
 
-        # Limpiamos la escena
-        print("- Limpando escena...")
-        createColissionRenderLayer.clear_render_setup_layers()
+        # Si aún no existe esa versión de LGT, la creamos
+        if not os.path.exists(lgt_path):
 
-        mc.file(save=True, f=True)
+            # Limpiamos la escena
+            print("- Limpando escena...")
+            createColissionRenderLayer.clear_render_setup_layers()
 
-        # Copiamos a Lighting
-        self.log(f"- Copiando {self.file_path} --> {lgt_path}")
-        shutil.copy2(self.file_path, lgt_path)
-        print("** LGT --> Escena creada!")
+            mc.file(save=True, f=True)
 
-        # Volvemos a crear la Colision Render Layer
-        createColissionRenderLayer.createColisionTestRenderLayer()
-        mc.file(save=True, f=True)
+            # Copiamos a Lighting
+            self.log(f"- Copiando {self.file_path} --> {lgt_path}")
+            shutil.copy2(self.file_path, lgt_path)
+            print("** LGT --> Escena creada!")
+
+            # Volvemos a crear la Colision Render Layer
+            createColissionRenderLayer.createColisionTestRenderLayer()
+            mc.file(save=True, f=True)
 
     ########################
     # UTILS ################

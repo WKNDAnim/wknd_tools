@@ -90,7 +90,6 @@ def _find_shot_paths(shot):
     versiones = os.listdir(maya_pt_root)
     versiones.sort(reverse=True)
     version = int(versiones[0][1:])
-
     paths["version"] = version
 
     # Formamos el path a la escena
@@ -300,7 +299,7 @@ def main():
 
         # Copiamos la escena a work
         print("\t - Copiamos la escena a work...")
-        
+
         paths = _find_shot_paths(shot)
         print(paths)
         if not paths:
@@ -318,7 +317,7 @@ def main():
             continue
 
         shutil.copy2(maya_pt_path, maya_work_path)
-        print(f"\t\t - Escena copiada :)")
+        print("\t\t - Escena copiada :)")
 
         # Abrimos la escena
         print("\t - Abriendo la escena en Maya...")
@@ -331,6 +330,7 @@ def main():
         # Cambiamos las refs para que apunten a nuestro server
         print("\t - Cambiando el path de las referencias...")
         repath_references()
+
         # Cambiamos las refs para que apunten a nuestro server
         print("\t - Cambiando el path de las texturas...")
         list_and_replace_shading_groups_and_textures()
