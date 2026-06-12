@@ -8,6 +8,7 @@ import shutil
 import tempfile
 import subprocess
 import re
+from math import ceil
 
 try:
     import maya.standalone
@@ -394,9 +395,13 @@ def _create_scenes(shot, create_flay=True):
         print(f"\t - Render OUT root: {render_root_path}")
 
         duration = (shot_info['sg_cut_out'] + 1) - (shot_info['sg_cut_in'] - 1) + 1
-        workers = 5
-        threshold = 50
-        chunk = duration if duration < threshold else int(round(duration/workers + .5))  # Le sumamos 0.5 para que siempre redondee hacia arriba
+        threshold = 20
+
+        if duration <= threshold:
+            chunk = duration
+        else:
+            n_chunks = round(duration / threshold)  # número de jobs
+            chunk = ceil(duration / n_chunks)        # frames por job, repartidos uniformemente
 
         print(f"\t - Submitting Render Job to Deadline...")
 

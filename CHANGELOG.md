@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.7] - 2026-06-12
+
+   - PUBLISH VERSION:
+      - FLAY --> Solo creamos la escena de Lighting si no existe ya para evitar sobreescribir escenas work ya iluminadas.
+
+   - SEND FLAY RENDER:
+      - Cambiamos el tamaño de los jobs de render para que no tarden tantisimo y estanquen la farm.
+
+   - UTILS:
+      - Creamos un script que cambia los paths en los .ass
+
+   - JSON SET:
+      - Añadimos CHE al if de cambiar MDL a SURF
+
+   - CROWDS:
+      - Prototipos y primeras versiones de UI.
+
 ## [1.2.6] - 2026-06-03
 
    - SEND FLAY RENDER:
