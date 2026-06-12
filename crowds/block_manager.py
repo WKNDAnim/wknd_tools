@@ -8,6 +8,7 @@ class BlockManager:
     """Gestiona la secuencia de bloques de un agente."""
 
     def __init__(self, frame_start, frame_end):
+
         self.frame_start = frame_start
         self.frame_end = frame_end
         self.blocks = []
@@ -15,12 +16,15 @@ class BlockManager:
     # -------------------------
     # Inicialización
     # -------------------------
+
     def initialize(self, default_state):
         """Crea el bloque inicial que cubre todo el rango."""
+
         self.blocks = [StateBlock(default_state, self.frame_start, self.frame_end)]
 
     def load(self, blocks_data):
         """Reconstruye la secuencia desde datos serializados."""
+
         self.blocks = []
         for data in blocks_data:
             if data["type"] == "state":
@@ -31,6 +35,7 @@ class BlockManager:
     # -------------------------
     # Crear bloque
     # -------------------------
+
     def add_block(self, state, start, end):
         """
         Inserta un StateBlock en el rango dado.
@@ -38,9 +43,10 @@ class BlockManager:
         - Crea transiciones automáticas si estados distintos
         - Fusiona si mismo estado
         """
+
         # Clamp al rango del timeline
         start = max(self.frame_start, start)
-        end   = min(self.frame_end,   end)
+        end = min(self.frame_end,   end)
 
         if start >= end:
             return
@@ -67,8 +73,10 @@ class BlockManager:
     # -------------------------
     # Split
     # -------------------------
+
     def _split_for_range(self, start, end):
         """Divide bloques que se solapen con el rango dado."""
+
         new_blocks = []
         for block in self.blocks:
             if isinstance(block, TransitionBlock):
@@ -91,8 +99,10 @@ class BlockManager:
     # -------------------------
     # Merge
     # -------------------------
+
     def _merge_same_state(self):
         """Fusiona StateBlocks adyacentes del mismo estado."""
+
         changed = True
         while changed:
             changed = False
@@ -115,34 +125,49 @@ class BlockManager:
     # -------------------------
     # Transiciones
     # -------------------------
+
     def _rebuild_transitions(self):
         """Reconstruye todas las transiciones entre StateBlocks adyacentes."""
+
+        # Guardamos las transiciones existentes por par de estados
+        existing = {
+            (t.state_from, t.state_to): t
+            for t in self.get_transition_blocks()
+        }
+
         # Eliminamos transiciones existentes
         self.blocks = [b for b in self.blocks if isinstance(b, StateBlock)]
         self._sort()
 
         state_blocks = self.blocks[:]
-        transitions  = []
+        transitions = []
 
         for i in range(len(state_blocks) - 1):
             a = state_blocks[i]
             b = state_blocks[i + 1]
 
             if a.state == b.state:
-                continue  # mismo estado, no hay transición
+                continue
 
-            # Calculamos duración: 10% de cada bloque adyacente
-            frames_from = max(1, math.floor(a.duration * constants.TRANSITION_PERCENT))
-            frames_to   = max(1, math.floor(b.duration * constants.TRANSITION_PERCENT))
+            # Si ya existía una transición entre estos dos estados, conservamos sus valores
+            existing_t = existing.get((a.state, b.state))
+            frames_from = existing_t.frames_from if existing_t else max(1, math.floor(a.duration * constants.TRANSITION_PERCENT))
+            frames_to = existing_t.frames_to if existing_t else max(1, math.floor(b.duration * constants.TRANSITION_PERCENT))
+
+            # Clamp por si los bloques ahora son más pequeños
+            frames_from = min(frames_from, a.duration - 1)
+            frames_to = min(frames_to,   b.duration - 1)
 
             t_start = a.end - frames_from
-            t_end   = b.start + frames_to
+            t_end = b.start + frames_to
 
             transitions.append(TransitionBlock(
-                start      = t_start,
-                end        = t_end,
-                state_from = a.state,
-                state_to   = b.state
+                start=t_start,
+                end=t_end,
+                state_from=a.state,
+                state_to=b.state,
+                frames_from=frames_from,
+                frames_to=frames_to
             ))
 
         self.blocks.extend(transitions)
@@ -177,32 +202,35 @@ class BlockManager:
     # -------------------------
     # Editar bloque
     # -------------------------
-    def update_block(self, block, new_start, new_end):
+
+    def update_block(self, block, new_start, new_end, new_state):
         """Actualiza el rango de un StateBlock y recalcula todo."""
+
         if not isinstance(block, StateBlock):
             return
 
         new_start = max(self.frame_start, new_start)
-        new_end   = min(self.frame_end,   new_end)
+        new_end = min(self.frame_end, new_end)
 
         if new_start >= new_end:
             return
 
-        state = block.state
+        state = new_state if new_state is not None else block.state
         self.blocks.remove(block)
 
         # Rellenamos el hueco que deja con bloques adyacentes
-        self._fill_gap(block.start, block.end, exclude=None)
+        self._fill_gap(block.start, block.end)
 
         # Insertamos con la nueva posición
         self.add_block(state, new_start, new_end)
 
-    def _fill_gap(self, start, end, exclude):
+    def _fill_gap(self, start, end):
         """
         Rellena un hueco expandiendo los bloques adyacentes.
         El bloque de la izquierda se expande hacia la derecha,
         si no hay bloque a la izquierda se expande el de la derecha.
         """
+
         state_blocks = [b for b in self.blocks if isinstance(b, StateBlock)]
         state_blocks.sort(key=lambda b: b.start)
 
@@ -221,6 +249,7 @@ class BlockManager:
     # -------------------------
     # Utilidades
     # -------------------------
+
     def _sort(self):
         self.blocks.sort(key=lambda b: b.start)
 
