@@ -1,16 +1,17 @@
 import maya.cmds as mc
 from PySide6 import QtWidgets, QtCore
 from maya.app.general.mayaMixin import MayaQWidgetBaseMixin
+import json
 
 from .. import constants
 from . import detail_ui
+from .timeline_widget import STATE_COLORS
+from ..block_manager import BlockManager
 
 import importlib
 importlib.reload(detail_ui)
 
 from .detail_ui import DetailUI
-
-from wknd_tools.crowds.ui.timeline_widget import STATE_COLORS
 
 
 class ManagerUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
@@ -104,12 +105,6 @@ class ManagerUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
             row = AgentRowWidget(agent, self.manager, parent_ui=self)
             self.agents_layout.addWidget(row)
 
-    def _open_detail(self, agent):
-
-        self.detail_win = DetailUI(agent, self.manager, self)
-        self.detail_win.agent_updated.connect(self._refresh_agent_list)
-        self.detail_win.show()
-
     # -- Callbacks
     def _on_add_agent(self):
 
@@ -141,7 +136,6 @@ class ManagerUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         super().show()
 
 
-
 class AgentRowWidget(QtWidgets.QWidget):
 
     def __init__(self, agent, manager, parent_ui, parent=None):
@@ -151,8 +145,10 @@ class AgentRowWidget(QtWidgets.QWidget):
         self.manager   = manager
         self.parent_ui = parent_ui
         self._job_id   = None
+        self._bm_cache  = None  # <- cache del BlockManager
         self._build()
         self._register_time_callback()
+        self._on_time_changed()
 
     def _build(self):
 
@@ -169,6 +165,15 @@ class AgentRowWidget(QtWidgets.QWidget):
         scene_combo.setCurrentText(current_name)
         scene_combo.currentTextChanged.connect(self._on_change_scene)
         row.addWidget(scene_combo)
+
+        # Botón Reference
+        self.btn_ref = QtWidgets.QPushButton("Load Ref")
+        self.btn_ref.setStyleSheet("background-color: #3a2a5e;")
+        self.btn_ref.clicked.connect(self._on_load_reference)
+        row.addWidget(self.btn_ref)
+        
+        # Actualizamos el texto del botón según el estado
+        self._update_ref_button()
 
         # Estado
         self.state_label = QtWidgets.QLabel(self.agent.state)
@@ -188,29 +193,36 @@ class AgentRowWidget(QtWidgets.QWidget):
         btn_remove.clicked.connect(self._on_remove)
         row.addWidget(btn_remove)
 
-    def _on_change_scene(self, name):
-        self.manager.change_scene(self.agent, constants.AGENT_SCENES[name])
-
     def _on_edit(self):
+
         self.detail_win = DetailUI(self.agent, self.manager)
         self.detail_win.agent_updated.connect(self._on_agent_updated)
         self.detail_win.show()
 
     def _on_remove(self):
+
         self.manager.remove_agent(self.agent.id)
         self.parent_ui._refresh_agent_list()
 
+    def _on_change_scene(self, name):
+
+        self.agent.change_scene(constants.AGENT_SCENES[name])
+
     def _on_agent_updated(self):
-        self.state_label.setText(self.agent.state)
+
+        self._invalidate_cache()  # <- invalidamos cuando cambian los bloques
+        self._on_time_changed()
 
     def _register_time_callback(self):
         """Registra un scriptJob que actualiza el estado al cambiar el frame."""
+
         self._job_id = mc.scriptJob(
             event=["timeChanged", self._on_time_changed],
             protected=False
         )
 
     def _on_time_changed(self):
+
         current_frame = int(mc.currentTime(q=True))
         state = self._get_state_at_frame(current_frame)
         if state:
@@ -220,16 +232,11 @@ class AgentRowWidget(QtWidgets.QWidget):
 
     def _get_state_at_frame(self, frame):
         """Devuelve el estado activo en un frame dado según los bloques del agente."""
-        import json
-        from wknd_tools.crowds.blocks import StateBlock
-        from wknd_tools.crowds.block_manager import BlockManager
 
         if not self.agent.blocks:
             return self.agent.state
 
-        bm = BlockManager(0, 99999)
-        bm.load(self.agent.blocks)
-
+        bm = self._get_block_manager()
         for block in bm.get_state_blocks():
             if block.start <= frame <= block.end:
                 return block.state
@@ -243,3 +250,32 @@ class AgentRowWidget(QtWidgets.QWidget):
         if self._job_id and mc.scriptJob(exists=self._job_id):
             mc.scriptJob(kill=self._job_id, force=True)
         self._job_id = None
+
+    def _get_block_manager(self):
+        """Devuelve el BlockManager cacheado, reconstruyéndolo si es necesario."""
+        if self._bm_cache is None:
+            self._bm_cache = BlockManager(0, 99999)
+            self._bm_cache.load(self.agent.blocks)
+        return self._bm_cache
+
+    def _invalidate_cache(self):
+        """Invalida el cache cuando los bloques cambian."""
+        self._bm_cache = None
+
+    def _update_ref_button(self):
+        if self.agent.is_referenced():
+            self.btn_ref.setText("Unload Ref")
+            self.btn_ref.setStyleSheet("background-color: #5e2a2a;")
+        else:
+            self.btn_ref.setText("Load Ref")
+            self.btn_ref.setStyleSheet("background-color: #3a2a5e;")
+
+    def _on_load_reference(self):
+        try:
+            if self.agent.is_referenced():
+                self.agent.unload_reference()
+            else:
+                self.agent.load_reference()
+            self._update_ref_button()
+        except ValueError as e:
+            QtWidgets.QMessageBox.warning(self, "Error", str(e))

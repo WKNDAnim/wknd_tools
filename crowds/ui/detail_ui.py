@@ -16,6 +16,7 @@ importlib.reload(timeline_widget)
 
 from .timeline_widget import TimelineWidget, STATE_COLORS
 from ..block_manager import BlockManager
+from ..animation_layer_manager import AnimationLayerManager
 
 
 class DetailUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
@@ -23,6 +24,7 @@ class DetailUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
     agent_updated = QtCore.Signal()
 
     def __init__(self, agent, manager, parent=None):
+
         super().__init__(parent)
         self.agent = agent
         self.manager = manager
@@ -44,6 +46,7 @@ class DetailUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         self._build_ui()
 
     def _build_ui(self):
+
         main_layout = QtWidgets.QVBoxLayout(self)
 
         # -- Header
@@ -146,25 +149,29 @@ class DetailUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         main_layout.addWidget(btn_close)
 
     def _on_select_state(self, state):
+
         self._active_state = state
         for s, btn in self.state_buttons.items():
             btn.setChecked(s == state)
 
     def _on_add_block(self):
+
         self.block_manager.add_block(
-            state = self._active_state,
-            start = self.input_start.value(),
-            end   = self.input_end.value()
+            state=self._active_state,
+            start=self.input_start.value(),
+            end=self.input_end.value()
         )
         self.timeline.refresh()
         self._on_blocks_changed()
 
     def _on_update_block(self):
+
         if self.timeline.selected_block:
             self.block_manager.update_block(
-                block     = self.timeline.selected_block,
-                new_start = self.input_start.value(),
-                new_end   = self.input_end.value()
+                block=self.timeline.selected_block,
+                new_start=self.input_start.value(),
+                new_end=self.input_end.value(),
+                new_state=self._active_state
             )
             self.timeline.selected_block = None
             self.timeline.refresh()
@@ -199,9 +206,14 @@ class DetailUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
 
     def _on_blocks_changed(self):
 
-        self.manager.save_blocks(self.agent, self.block_manager.serialize())
+        self.agent.save_blocks(self.block_manager.serialize())
         self._refresh_blocks_label()
         self.agent_updated.emit()
+
+        # Bake automático si tiene referencia cargada
+        if self.agent.is_referenced():
+            alm = AnimationLayerManager(self.agent)
+            alm.bake()
 
     def _refresh_blocks_label(self):
 
@@ -216,9 +228,9 @@ class DetailUI(MayaQWidgetBaseMixin, QtWidgets.QWidget):
         block = self.timeline.selected_block
         if block and type(block).__name__ == "TransitionBlock":
             success, error = self.block_manager.update_transition(
-                block = block,
-                frames_from = self.input_frames_from.value(),
-                frames_to = self.input_frames_to.value()
+                block=block,
+                frames_from=self.input_frames_from.value(),
+                frames_to=self.input_frames_to.value()
             )
             if not success:
                 QtWidgets.QMessageBox.warning(self, "Invalid transition", error)
