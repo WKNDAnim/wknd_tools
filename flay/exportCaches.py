@@ -121,10 +121,10 @@ def export_selected_geos():
 
     # Get current version fields
     current_file = mc.file(query=True, sceneName=True)
-    print(f"📝 Current File: {current_file}")
+    print(f"📝 - Current File: {current_file}")
     fields_work = template.get_fields(current_file)
     current_version = fields_work["version"]
-    print(f"🧺 Fields WORK: {fields_work}")
+    print(f"🧺 - Fields WORK: {fields_work}")
 
     # Template OUT CACHE
     cache_out_path_template = tk.templates["maya_shot_anim_assets_abc_publish"]
@@ -136,13 +136,14 @@ def export_selected_geos():
     error = []
 
     selected = mc.ls(sl=1)
-    # obj = selected[0]
     for obj in selected:
+
+        print(f"----- {obj} ----- ")
 
         # Buscamos el path a la referencia actual
         try:
             ref_path = mc.referenceQuery(obj, filename=True)
-            print(ref_path)
+            print(f"\t + Reference path: {ref_path}")
         except:
             ref_path = False
             print(f"❌ ERROR: '{obj}' no pertenece a un nodo de referencia")
@@ -156,13 +157,15 @@ def export_selected_geos():
         if not shapes:
             shapes = mc.ls(children, type="shape")
 
-        print(f"🧺 SHAPES: {shapes}")
+        print(f"\t + 🧺 SHAPES: {shapes}")
 
         # Comprobamos si la shape tiene los extra attr
         if not "GUS_asset_id" in mc.listAttr(shapes[0]):
 
             # Check if it is a camera
-            if "camera" in shapes[0]:
+            if "_CAM_" in shapes[0]:
+
+                print(f"\t + 📹 Exportando cámara: {shapes[0]}")
 
                 camera_path_template = tk.templates["maya_shot_camera_abc_publish"]
 

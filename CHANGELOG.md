@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.8] - 2026-06-30
+
+   - FLAY:
+      - Export Caches:
+         - Arreglamos la exportación de CAMARAS desde FLay
+
+   - COMP:
+      - Traemos el init y en menu aquí
+
+   - NUKE:
+      - Hacemos un botón que importe la cámara del Shot
+      - Hacemos un botón que importe el Template de Comp
+   
+
 ## [1.2.7] - 2026-06-12
 
    - PUBLISH VERSION:
