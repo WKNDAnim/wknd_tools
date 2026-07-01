@@ -116,14 +116,16 @@ def _open_scene(shot):
     ref_nodes = mc.ls(references=True) or []
     for ref_node in ref_nodes:
         print(f"Cargando {ref_node}", flush=True)
-        fn = mc.referenceQuery(ref_node, filename=True)
-        print(f"\t - {fn}")
-        # Cargamos la ref si no es un CHAR
-        if any(x in fn for x in ("CHS", "CHE", "CHM")):
-            print(f" xxxxxxx Not loading due to is a CHAR")
-            continue
-        mc.file(loadReference=ref_node, loadReferenceDepth="all")
-
+        try:
+            fn = mc.referenceQuery(ref_node, filename=True)
+            print(f"\t - {fn}")
+            # Cargamos la ref si no es un CHAR
+            if any(x in fn for x in ("CHS", "CHE", "CHM")):
+                print(f" xxxxxxx Not loading due to is a CHAR")
+                continue
+            mc.file(loadReference=ref_node, loadReferenceDepth="all")
+        except:
+            print(f"ERROR: No se pudo cargar la referencia {ref_node}")
     return fields
 
 
