@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.10] - 2026-07-01
+
+   - PUBLISH VERSION:
+      - Editamos en `_create_lgt_from_flay` el código que calcula el chunk size para que sea el mismo que en el auto flay.
+
+   -UTILS:
+      - SET AUTO EXPORTER:
+        - Hacemos un try para obtener el path del nodo de referencia
+
+
 ## [1.2.9] - 2026-07-01
 
    - COMP:
