@@ -22,12 +22,13 @@ mc.loadPlugin('mtoa')
 
 import wknd_tools
 from wknd_tools.utils import json_set, createColissionRenderLayer, reconnect_shaders
-from wknd_tools.flay import fix_escuelaExt
+from wknd_tools.flay import fix_escuelaExt, helpers
 import importlib
 importlib.reload(json_set)
 importlib.reload(createColissionRenderLayer)
 importlib.reload(reconnect_shaders)
 importlib.reload(fix_escuelaExt)
+importlib.reload(helpers)
 
 DEADLINECOMMAND = r"C:\Program Files\Thinkbox\Deadline10\bin\deadlinecommand.exe"
 MAYAPY = r"C:\Program Files\Autodesk\Maya2026\bin\mayapy.exe"
@@ -174,9 +175,7 @@ def _create_scenes(shot, create_flay=True):
 
     print("- Miramos si hacen falta Fixes....")
 
-    # Fix escuelaExt
-    escuelaExt = {'id': 1866, 'name': 'escuelaExt', 'type': 'Asset'}
-
+    # Buscamos los assets del Master
     sg_shot = sg.find_one("Shot", [["code", "is", shot["code"]]], ["parent_shots"])
     print("SG SHOT:")
     print(sg_shot)
@@ -185,17 +184,18 @@ def _create_scenes(shot, create_flay=True):
     print("PARENT SHOTS:")
     print(parent_shots)
 
+    # Fix escuelaExt
+    escuelaExt = {'id': 1866, 'name': 'escuelaExt', 'type': 'Asset'}
     if escuelaExt in parent_shots["assets"]:
 
         print("\t - Contiene EscuelaExt ----------------------------------------")
         fix_escuelaExt.fix_arbustos_vallas()
         print("\t\t - Añadimos Arbustos y Vallas")
-        fix_escuelaExt.fix_cesped()
-        print("\t\t - Añadimos Cesped")
+        # fix_escuelaExt.fix_cesped()
+        # print("\t\t - Añadimos Cesped")
 
     # Fix Descampado
     descampado = {'id': 2017, 'name': 'descampado', 'type': 'Asset'}
-
     if descampado in parent_shots["assets"]:
 
         print("\t - Contiene Descampado ----------------------------------------")
@@ -234,6 +234,9 @@ def _create_scenes(shot, create_flay=True):
 
             # Escondemos el Tendido Eléctrico que viene con el JSON
             mc.setAttr('tendidoElectrico.v', 0)
+
+    # Añadimos el .ass de hierba si se necesita
+    helpers.add_hierba_auto()
 
     print("- Fin Fixes....")
 
