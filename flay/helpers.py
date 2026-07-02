@@ -152,3 +152,43 @@ def _ref_to_standin(elem):
         except:
             pass
         mc.file(ref, removeReference=True)
+
+
+def add_hierba(location):
+
+    accepted_locations = [
+        "descampadoSuelo",
+        "parqueSuelo",
+        "escuelaExtSuelo",
+    ]
+    if location not in accepted_locations:
+        print(f"⚠️⚠️⚠️ WARNING --> No podemos importar la hierba. La location - {location} - no es aceptada...")
+        return False
+
+    publish_path = rf"Z:\02Proyectos\Gus\assets\ELEM\{location}\SURF\Shading\publish\maya"
+
+    files = os.listdir(publish_path)
+    files = [f for f in files if "hierba" in f]
+    files.sort(reverse=True)
+    path = os.path.join(publish_path, files[0])
+
+    return mc.file(path, r=True, returnNewNodes=True)
+
+
+def add_hierba_auto():
+
+    accepted_locations = [
+        "descampadoSuelo",
+        "parqueSuelo",
+        "escuelaExtSuelo",
+    ]
+
+    refs = mc.file(q=True, reference=True)
+    for ref_path in refs:
+        for location in accepted_locations:
+            if location in ref_path:
+                new_nodes = add_hierba(location)
+                if new_nodes:
+                    top_nodes = mc.ls(new_nodes, assemblies=True)
+                    mc.parent(top_nodes, "SET")
+                    mc.select(top_nodes)
