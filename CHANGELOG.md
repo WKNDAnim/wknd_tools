@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.11] - 2026-07-02
+
+   - FLAY:
+      - Helpers --> Añadimos una función para añadir la hierba en Descampado, Parque y Escuela Ext
+      - Send Flay Render --> Hacemos Fix para añadir la hierba
+
+
 ## [1.2.10] - 2026-07-01
 
    - PUBLISH VERSION:
