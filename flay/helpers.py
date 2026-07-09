@@ -172,6 +172,12 @@ def add_hierba(location):
     files.sort(reverse=True)
     path = os.path.join(publish_path, files[0])
 
+    # Miramos que no este ya en la escena
+    refs = mc.file(q=True, reference=True)
+    if path in refs:
+        print(f"⚠️⚠️⚠️ WARNING --> LA hierba para - {location} - ya está en la escena")
+        return False
+
     return mc.file(path, r=True, returnNewNodes=True)
 
 
@@ -184,9 +190,11 @@ def add_hierba_auto():
     ]
 
     refs = mc.file(q=True, reference=True)
+    print("- Buscando en las referencias de la escena...")
     for ref_path in refs:
         for location in accepted_locations:
             if location in ref_path:
+                print(f"- Referenciando hierba para {location}...")
                 new_nodes = add_hierba(location)
                 if new_nodes:
                     top_nodes = mc.ls(new_nodes, assemblies=True)

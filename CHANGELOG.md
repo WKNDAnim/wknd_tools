@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.12] - 2026-07-09
+
+   - COMP:
+      - Init:
+         - Añadimos `aeTools` al plugin path
+
+   - FLAY:
+      - Helpers:
+         - Añadimos un check que mira si está la hierba en la escena antes de importarla
+
+
 ## [1.2.11] - 2026-07-02
 
    - FLAY:
