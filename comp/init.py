@@ -14,7 +14,7 @@ nuke.pluginAddPath(f"{file_root}/nodes")
 nuke.pluginAddPath(f"{file_root}/NukeSurvivalToolkit")
 nuke.pluginAddPath(f"{file_root}/Stamps-1.2.0")
 nuke.pluginAddPath(f"{file_root}/bokehBuilderRelease")
-# nuke.pluginAddPath('./nodes')
+nuke.pluginAddPath(f"{file_root}/aeTools")
 
 ##############
 # COLORSPACE #
