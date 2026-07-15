@@ -15,6 +15,7 @@ nuke.pluginAddPath(f"{file_root}/NukeSurvivalToolkit")
 nuke.pluginAddPath(f"{file_root}/Stamps-1.2.0")
 nuke.pluginAddPath(f"{file_root}/bokehBuilderRelease")
 nuke.pluginAddPath(f"{file_root}/aeTools")
+nuke.pluginAddPath(f"{file_root}/Nuke-AI-Denoiser-main")
 
 ##############
 # COLORSPACE #
