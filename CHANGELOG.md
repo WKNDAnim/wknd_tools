@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.14] - 2026-07-20
+
+   - COMP:
+      - Init:
+         - Añadimos `CGDenoiser_Nuke16` para test.
+         - Quitamos `Nuke-AI-Denoiser-main`.
+
 ## [1.2.13] - 2026-07-15
 
    - COMP:
