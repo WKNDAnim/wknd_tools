@@ -10,12 +10,23 @@ file_root = r"Z:/05Framework/packages/resources/nuketools"
 # Add Paths #
 #############
 
+
+# def addPluginPaths():
+#     for folder in os.listdir(file_root):
+#         if folder == "_deprecated":
+#             continue
+#         if os.path.isdir(folder):
+#             nuke.pluginAddPath(os.path.join(file_root, folder))
+
+# addPluginPaths()
+
 nuke.pluginAddPath(f"{file_root}/nodes")
 nuke.pluginAddPath(f"{file_root}/NukeSurvivalToolkit")
 nuke.pluginAddPath(f"{file_root}/Stamps-1.2.0")
 nuke.pluginAddPath(f"{file_root}/bokehBuilderRelease")
 nuke.pluginAddPath(f"{file_root}/aeTools")
-nuke.pluginAddPath(f"{file_root}/Nuke-AI-Denoiser-main")
+# nuke.pluginAddPath(f"{file_root}/Nuke-AI-Denoiser-main")
+nuke.pluginAddPath(f"{file_root}/CGDenoiser_Nuke16")
 
 ##############
 # COLORSPACE #
