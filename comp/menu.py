@@ -2,6 +2,8 @@ import os
 import nuke
 from wknd_tools.comp import helpers
 
+import flowReadFromWrite
+
 
 def build_gizmo_menus(gizmos_root, top_tb_name="Gizmos", node_tb_path="Nodes"):
     """
@@ -63,6 +65,7 @@ def build_gizmo_menus(gizmos_root, top_tb_name="Gizmos", node_tb_path="Nodes"):
 
 menu = nuke.menu("Nuke").addMenu("WKND")
 menu.addCommand("Import Shot Camera", helpers.import_shot_camera)
+menu.addCommand('Read from FlowWrite','flowReadFromWrite.run()','alt+r')
 # menu.addCommand("Import Template", helpers.import_template)
 
 
@@ -78,3 +81,4 @@ build_gizmo_menus(
     top_tb_name="WKND",   # el menú principal
     node_tb_path="Nodes"    # normalmente "Nodes"
 )
+

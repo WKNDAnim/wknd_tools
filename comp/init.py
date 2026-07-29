@@ -20,6 +20,7 @@ file_root = r"Z:/05Framework/packages/resources/nuketools"
 
 # addPluginPaths()
 
+nuke.pluginAddPath(f"{file_root}/scripts")
 nuke.pluginAddPath(f"{file_root}/nodes")
 nuke.pluginAddPath(f"{file_root}/NukeSurvivalToolkit")
 nuke.pluginAddPath(f"{file_root}/Stamps-1.2.0")

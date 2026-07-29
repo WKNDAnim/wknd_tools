@@ -8,14 +8,26 @@ def _reconnect_shaders():
     shaders = cmds.ls(exactType="shadingEngine")
 
     for shape in shapes:
-        try:
-            assetName = cmds.getAttr(shape + "." + "GUS_asset_name")
+        print(f"- SHAPE ----------- {shape}")
+        if not "shapeorig" in shape.lower() and not "scalp" in shape.lower():
             try:
-                shaderName = cmds.getAttr(shape + "." + "GUS_shading_grp")
+                try:
+                    assetName = cmds.getAttr(shape + "." + "GUS_asset_name")
+                except:
+                    assetName = cmds.getAttr(shape + "." + "GUS_SG_assetName")
             except:
-                shaderName = cmds.getAttr(shape + "." + "GUS_relatedShader")
-            shaderEngine = [s for s in shaders if shaderName in s and assetName in s][0]
-            cmds.sets(shape, e=True, forceElement=shaderEngine)
-            print(f"'{shaderName}' connected to '{shape}'")
-        except Exception as e:
-            print(f"ERROR: Cannot connect Shader for Shape {shape}: {e}")
+                continue
+            try:
+                try:
+                    shaderName = cmds.getAttr(shape + "." + "GUS_shading_grp")
+                except:
+                    shaderName = cmds.getAttr(shape + "." + "GUS_relatedShader")
+                print(f"- SHADER ----------- {shaderName}")
+                try:
+                    shaderEngine = [s for s in shaders if shaderName in s and assetName in s][0]
+                except:
+                    shaderEngine = [s for s in shaders if shaderName in s][0]
+                cmds.sets(shape, e=True, forceElement=shaderEngine)
+                print(f"'{shaderName}' connected to '{shape}'")
+            except Exception as e:
+                print(f"ERROR: Cannot connect Shader for Shape {shape}: {e}")
