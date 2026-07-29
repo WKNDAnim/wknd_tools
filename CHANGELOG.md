@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.15] - 2026-07-29
+
+   - COMP:
+      - Init:
+         - Añadimos la carpeta `scripts`
+      - Menu:
+         - Añadimos `ReadFromWrite`
+
+   - FLAY:
+      - Añadimos Shelves para CROWDS
+
+   - UTILS:
+      - Reconnect Shaders:
+         - Hacemos la función un poco más robusta
+   
+
 ## [1.2.14] - 2026-07-20
 
    - COMP:
