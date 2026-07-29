@@ -1,6 +1,8 @@
 import maya.cmds as mc
+import maya.mel as mm
 import os
 from mtoa.core import createStandIn
+from . import crowds
 
 
 def _add_hierba_to_cesped():
@@ -200,3 +202,173 @@ def add_hierba_auto():
                     top_nodes = mc.ls(new_nodes, assemblies=True)
                     mc.parent(top_nodes, "SET")
                     mc.select(top_nodes)
+
+
+def createWrap(source, target):
+    mc.select(source, r=1)
+    mc.select(target, add=1)
+    wrapNode = mm.eval('doWrapArgList "7" { "1", "1", "1", "2", "1", "1", "0", "0" };')
+    baseGeo = mc.listConnections(f'{wrapNode[0]}.basePoints[0]')
+    return baseGeo[0]
+
+
+def create_wrap(driver, driven, exclusive_bind=True, auto_weight_threshold=True,
+                 falloff_mode=0, max_distance=1.0, weight_threshold=0.0):
+
+    # CreateWrap necesita la selección: primero el/los driven, luego el driver
+    mc.select(driven, replace=True)
+    mc.select(driver, add=True)
+
+    mm.eval("CreateWrap;")
+
+    # Buscamos el wrap recién creado en la history del driven
+    history = mc.listHistory(driven)
+    wrap_node = mc.ls(history, type="wrap")[0]
+
+    # Ajustamos las opciones por nombre de atributo (fiable, documentado)
+    mc.setAttr(f"{wrap_node}.exclusiveBind", exclusive_bind)
+    mc.setAttr(f"{wrap_node}.autoWeightThreshold", auto_weight_threshold)
+    mc.setAttr(f"{wrap_node}.falloffMode", falloff_mode)
+    mc.setAttr(f"{wrap_node}.maxDistance", max_distance)
+    mc.setAttr(f"{wrap_node}.weightThreshold", weight_threshold)
+
+    return wrap_node
+
+
+def _fix_hombre03():
+
+    asset="hombre03"
+    surf_path = r"Z:\02Proyectos\Gus\assets\CHE\hombre03\SURF\Shading\publish\maya\hombre03_scene_Shading_v005.ma"
+
+    mc.file(surf_path, r=True, ns=asset)
+
+    meshes = mc.ls(f"{asset}:*", type="mesh")
+
+    for mesh in meshes:
+        attr = mc.getAttr(f"{mesh}.GUS_shading_grp")
+        print(f"{mesh} --> {attr}")
+        mc.setAttr(f"{mesh.split(':')[-1]}.GUS_relatedShader", attr, type="string")
+
+    mc.file(surf_path, removeReference=True)
+
+
+def acabar_extras():
+
+    from wknd_tools.utils import reconnect_shaders
+    import imp
+    imp.reload(reconnect_shaders)
+
+    # Buscamos el nombre del crowd
+    file_path = mc.file(q=True, sn=True)
+    print(file_path)
+    crowd_name = os.path.basename(file_path).split("_")[0]
+
+    # Buscamos qué Asset es
+    meshes = mc.ls(type="mesh")
+    asset_name = mc.getAttr(f"{meshes[0]}.GUS_SG_assetName")
+    print(asset_name)
+
+    if asset_name == "hombre03":
+        _fix_hombre03()
+
+    # Importamos sus shaders
+    shader_root = rf"Z:\02Proyectos\Gus\assets\CHE\{asset_name}\SURF\Shading\publish\maya\shaders"
+    shaders = os.listdir(shader_root)
+    shaders.sort(reverse=True)
+    shader_path = os.path.join(shader_root, shaders[0])
+    print(shader_path)
+    mc.file(shader_path, i=True)
+
+    # Reconectamos los shaders
+    reconnect_shaders._reconnect_shaders()
+
+    # Importamos el groom
+    groom_root = rf"Z:\02Proyectos\Gus\assets\CHE\{asset_name}\GROOM\Groom\publish\maya\assets"
+    groom = os.listdir(groom_root)
+    groom.sort(reverse=True)
+    groom_path = os.path.join(groom_root, groom[0])
+    print(groom_path)
+
+    nuevos_nodos = mc.file(groom_path, i=True, returnNewNodes=True)
+
+    top_nodes = mc.ls(nuevos_nodos, assemblies=True, long=True)
+    if top_nodes:
+        grupo = mc.parent(top_nodes,f"{crowd_name}_crowds")
+        print(f"Nodos agrupados en: {grupo}")
+    else:
+        print("No se encontraron nodos de nivel superior para agrupar")
+
+    # Hacemos el wrap del scalp
+    driver = "body_C_msh"
+    driven = "bodyScalp_C_msh"
+
+    create_wrap(driver, driven)
+    # createWrap(source, target)
+
+    # Unos pocos render settings
+    mc.setAttr("defaultArnoldRenderOptions.autotx", 0)
+    mc.setAttr("defaultArnoldRenderOptions.textureMaxMemoryMB", 24096)
+
+    # mc.setAttr("defaultResolution.width", 540)
+    # mc.setAttr("defaultResolution.height", 960)
+    # mc.setAttr("defaultResolution.pixelAspect", 1)
+
+    import mtoa.utils as mutils
+
+    skydome = mutils.createLocator("aiSkyDomeLight", asLight=True)
+
+    mc.confirmDialog(m="DONE :)")
+
+
+def import_crowds_ui():
+
+    folder_path = r"Z:\02Proyectos\Gus\assets\CHE\crowds\MDL\Model\publish\maya"
+
+    win_name = "importMaFilesWin"
+    if mc.window(win_name, exists=True):
+        mc.deleteUI(win_name)
+
+    window = mc.window(win_name, title="Importar Crowds", widthHeight=(350, 400), sizeable=True)
+
+    mc.columnLayout(adjustableColumn=True, rowSpacing=5, columnAttach=("both", 10))
+    mc.text(label=f"Carpeta: {folder_path}", align="left", wordWrap=True)
+    mc.separator(height=10, style="in")
+
+    file_list = mc.textScrollList(allowMultiSelection=False, height=280)
+
+    # Listamos solo los .ma de la carpeta
+    if os.path.isdir(folder_path):
+        ma_files = sorted([f for f in os.listdir(folder_path) if f.lower().endswith(".ma")], reverse=True)
+        for f in ma_files:
+            mc.textScrollList(file_list, edit=True, append=f)
+    else:
+        mc.text(label="⚠ La carpeta no existe", align="left")
+
+    mc.separator(height=10, style="in")
+
+    def do_import(*args):
+        selected = mc.textScrollList(file_list, query=True, selectItem=True)
+        if not selected:
+            mc.warning("Selecciona un archivo antes de importar.")
+            return
+
+        # Primero hacemos el fix de las gradas
+        try:
+            crowds._fixGradas()
+        except:
+            mc.warning("[WARNING] --> No existen las gradas en la escena")
+
+        # Importamos
+        file_path = os.path.join(folder_path, selected[0])
+        nuevos_nodos = mc.file(file_path, i=True, returnNewNodes=True)
+        top_nodes = mc.ls(nuevos_nodos, assemblies=True, long=True)
+
+        print(f"Importado: {file_path}")
+        if top_nodes:
+            print(f"Nodos de nivel superior: {top_nodes}")
+
+        mc.deleteUI(window)
+
+    mc.button(label="Importar", height=35, command=do_import)
+
+    mc.showWindow(window)
