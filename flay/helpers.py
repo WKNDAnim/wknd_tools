@@ -109,7 +109,7 @@ def _ref_to_standin(elem):
     asses.sort(reverse=True)
     ass_path = os.path.join(ass_root, asses[0])
 
-    # 1. Recoger transforms
+    # Recoger transforms
     children = mc.listRelatives(f"|SET|{elem}", children=True, fullPath=True, type="transform") or []
 
     ref_path = None
@@ -129,7 +129,7 @@ def _ref_to_standin(elem):
         s = mc.xform(child, query=True, scale=True, worldSpace=True)
         transforms.append({'t': t, 'r': r, 's': s})
 
-    # 2. Crear standin y replicar transforms
+    # Crear standin y replicar transforms
     node = createStandIn()
     mc.setAttr(node + '.mode', 3)
     mc.setAttr(node + '.dso', ass_path, type='string')
@@ -265,7 +265,10 @@ def acabar_extras():
 
     # Buscamos qué Asset es
     meshes = mc.ls(type="mesh")
-    asset_name = mc.getAttr(f"{meshes[0]}.GUS_SG_assetName")
+    try:
+        asset_name = mc.getAttr(f"{meshes[0]}.GUS_SG_assetName")
+    except:
+        asset_name = mc.getAttr(f"{meshes[0]}.GUS_asset_name")
     print(asset_name)
 
     if asset_name == "hombre03":
