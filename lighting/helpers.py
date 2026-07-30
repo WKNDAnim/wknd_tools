@@ -165,6 +165,7 @@ def _setRenderSettings():
     mc.setAttr("defaultArnoldDriver.halfPrecision", True)
     mc.setAttr("defaultArnoldDriver.tiled", False)
     mc.setAttr("defaultArnoldDriver.mergeAOVs", True)
+    mc.setAttr("defaultArnoldDriver.multipart", True)
     print("Arnold settings done")
 
     # Hacemos que no se renderice PERSP
@@ -193,12 +194,12 @@ def _setRenderSettings():
     mc.setAttr("defaultRenderGlobals.imageFormat", 40)  # 40 = EXR
 
     # Arnold EXR settings
-    mc.setAttr("defaultArnoldDriver.exrCompression", 3)  # 2 = zip
+    mc.setAttr("defaultArnoldDriver.exrCompression", 2)  # 2 = zips -> 1 scanline, 3 = zip -> 16 scanlines
     mc.setAttr("defaultArnoldDriver.halfPrecision", True)
     mc.setAttr("defaultArnoldDriver.tiled", False)
 
     # Arnodl settings
-    mc.setAttr("defaultArnoldRenderOptions.AASamples", 3)
+    mc.setAttr("defaultArnoldRenderOptions.AASamples", 5)
     mc.setAttr("defaultArnoldRenderOptions.GIDiffuseSamples", 2)
     mc.setAttr("defaultArnoldRenderOptions.GISpecularSamples", 2)
     mc.setAttr("defaultArnoldRenderOptions.GITransmissionSamples", 2)
