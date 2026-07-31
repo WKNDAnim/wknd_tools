@@ -165,7 +165,7 @@ def _setRenderSettings():
     mc.setAttr("defaultArnoldDriver.halfPrecision", True)
     mc.setAttr("defaultArnoldDriver.tiled", False)
     mc.setAttr("defaultArnoldDriver.mergeAOVs", True)
-    mc.setAttr("defaultArnoldDriver.multipart", True)
+    # mc.setAttr("defaultArnoldDriver.multipart", True)
     print("Arnold settings done")
 
     # Hacemos que no se renderice PERSP
