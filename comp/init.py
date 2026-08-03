@@ -28,6 +28,7 @@ nuke.pluginAddPath(f"{file_root}/bokehBuilderRelease")
 nuke.pluginAddPath(f"{file_root}/aeTools")
 # nuke.pluginAddPath(f"{file_root}/Nuke-AI-Denoiser-main")
 nuke.pluginAddPath(f"{file_root}/CGDenoiser_Nuke16")
+nuke.pluginAddPath(f"{file_root}/batch_renderer")
 
 ##############
 # COLORSPACE #

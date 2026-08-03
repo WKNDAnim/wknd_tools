@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.17] - 2026-07-31
+
+   -COMP:
+      - INIT:
+         - Añadimos `batch_renderer'
+
+   -  LIGHTING:
+      - Helpers:
+         - Render Settings:
+            - Quitamos Multipart, da errores.
+   
+
+## [1.2.16] - 2026-07-30
+
+   -  LIGHTING:
+      - Helpers:
+         - Render Settings:
+            - Ponemos la compresión del EXR en ZIPS (ZIP1)
+            - Seteamos el EXR como Multipart
+
+
 ## [1.2.15] - 2026-07-29
 
    - COMP:
