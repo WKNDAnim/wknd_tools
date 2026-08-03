@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.18] - 2026-08-03
+
+   - UTILS:
+      - Create Collision Render Layers:
+         - Añadimos el grupo `CROWDS` al render layer
+
 ## [1.2.17] - 2026-07-31
 
    -COMP:
