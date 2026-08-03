@@ -12,7 +12,7 @@ def createColisionTestRenderLayer():
 
     # Crear collection con todos los transforms
     col = layer.createCollection("all_transforms")
-    col.getSelector().setPattern("ANIM* , SET* , CAMERA*")
+    col.getSelector().setPattern("ANIM* , SET* , CAMERA*, CROWDS*")
     col.getSelector().setFilterType(1)
 
     # Crear shader aiUtility
