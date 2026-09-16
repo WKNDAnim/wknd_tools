@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.19] - 2026-09-16
+
+   - Añadimos ITMANAGER a la lista de usuarios que pueden publicar ANM por lotes
+   - Primera versión del creador de escenas de LGT para ADV
+
+
 ## [1.2.18] - 2026-08-03
 
    - UTILS:
