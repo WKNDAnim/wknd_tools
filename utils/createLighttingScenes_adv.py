@@ -2,29 +2,40 @@ import sys
 sys.path.insert(0, r"Z:\05Framework\users\aferraz\packages\dev_tk\master_tk_config\install\core\python")
 sys.path.insert(0, r"Z:\05Framework\users\aferraz")
 
-import sgtk
 import os
 
-from wknd_tools.utils import reconnect_shaders
-import imp
-imp.reload(reconnect_shaders)
-
-
+# --- Inicializamos Maya standalone ANTES de tocar nada de maya.* ---
 try:
     import maya.standalone
     maya.standalone.initialize(name='python')
+
+    import maya.OpenMaya as om
+
+    om.MGlobal.setDisplayWarnings(False)   # oculta "Warning: ..."
+    om.MGlobal.setDisplayInfos(False)      # oculta líneas informativas tipo "Read 11 files in..."
+    # om.MGlobal.setDisplayErrors(False)   # NO lo actives: oculta errores reales, te interesa verlos
 except:
     pass
 
 
 import maya.cmds as mc
+
 mc.loadPlugin("AbcImport")
 mc.loadPlugin('mtoa')
 
+# --- Ahora sí, importamos sgtk y los módulos propios ---
+import sgtk
+
+from wknd_tools.utils import reconnect_shaders
+from wknd_tools.lighting import helpers
+import importlib
+importlib.reload(reconnect_shaders)
+importlib.reload(helpers)
+
 #############################################
 
-MAYAPY = r"C:\Program Files\Autodesk\Maya2026\bin\mayapy.exe"
 LGT_SETUP = r"Z:\02Proyectos\Gus\resources\lights\white_lights.ma"
+ERROR = []
 
 #############################################
 
@@ -35,7 +46,8 @@ LGT_SETUP = r"Z:\02Proyectos\Gus\resources\lights\white_lights.ma"
 tk = sgtk.sgtk_from_path(r"Z:\05Framework\users\aferraz\packages\dev_tk\master_tk_config")
 sg = tk.shotgun
 
-#############################################
+###################################################
+
 
 def transform_exists(node):
 
@@ -68,11 +80,22 @@ def _search_shots_in_seq(seq_name):
         ["project", "is", {"type": "Project", "id": 91}],
         ["sg_sequence.Sequence.code", "is", seq_name],
         ["code", "not_contains", "master"],
-        ["sg_status_list", "is_not", "omt"]
+        ["sg_status_list", "not_in", ["omt", "wtg"]]
     ]
     query = ["code", "sg_sequence", "sg_status_list"]
 
     return sg.find("Shot", filters, query)
+
+
+def is_arnes_visible(cache_top):
+
+    b = mc.listRelatives(cache_top, fullPath=True, type="transform")
+    c = mc.listRelatives(b, fullPath=True, type="transform")
+    x = [i for i in c if "arnes_C_grp" in i]
+    if x:
+        return mc.getAttr(f"{x[0]}.v")
+    else:
+        return False
 
 
 def _export_camera(camera_path):
@@ -81,9 +104,31 @@ def _export_camera(camera_path):
     try:
         mc.select("CAMERA", hi=True)
     except:
-        print("ERROR: No existe el grupo CAMERA...")
+        print("WARNING: No existe el grupo CAMERA...")
 
-    mc.file(camera_path, type="mayaAscii", exportSelected=True)
+        # Creamos el grupo
+        mc.group(n="CAMERA", em=True)
+
+        # Buscamos la camara y la seleccionamos
+        cameras = mc.ls(type="camera")
+        avoid = ['frontShape', 'perspShape', 'sideShape', 'topShape']
+
+        camera_shape = [cam for cam in cameras if cam not in avoid]  
+        camera_transform = mc.listRelatives(camera_shape[0], p=True)[0]
+        mc.select(clear=True)
+        mc.parent(camera_transform, "CAMERA")
+
+        mc.select("CAMERA", hi=True)
+
+    # Aseguramos que la carpeta de destino existe
+    camera_dir = os.path.dirname(camera_path)
+    os.makedirs(camera_dir, exist_ok=True)
+
+    try:
+        mc.file(camera_path, type="mayaAscii", exportSelected=True, f=True)
+    except Exception as e:
+        print(f"ERROR: No se ha podido exportar la camara --> {e}")
+        return
 
 
 def load_shaders(asset_name):
@@ -215,9 +260,14 @@ def load_cache(cache_path):
         asset_name = cache_fields["Asset"]
     except:
         cache_fields = False
+        asset_name = False
 
     print(f"CACHE_FIELDS: {cache_fields}")
     print(f"asset_name: {asset_name}")
+
+    if not asset_name:
+        print(f"ERROR: No se ha podido obtener el asset_name de {cache_path}. Saltando cache...")
+        return
 
     new_objects = mc.referenceQuery(ref_node, nodes=True)
     new_transforms = mc.ls(new_objects, type='transform', long=True)
@@ -258,6 +308,10 @@ def load_cache(cache_path):
     # PARENT
     mc.parent(cache_top, asset_name)
 
+    # Creamos el grupo del ANIM si no existe
+    if not transform_exists("ANIM"):
+        mc.group(n="ANIM", em=True)
+
     # PARENT
     mc.parent(asset_name, "ANIM")
 
@@ -278,19 +332,29 @@ def load_lgt():
     mc.parent(cache_top, "LIGHTS")
 
 
-def _create_lgt_scene(fields_anm):
+def load_camera(camera_path):
 
-    mc.file(new=True)
+    ref_node = mc.file(camera_path, r=True)
+
+
+def _create_lgt_scene(fields_anm, camera_path):
+
+    mc.file(new=True, f=True)
 
     fields = fields_anm.copy()
     fields["Step"] = "LGT"
     fields["Task"] = "Lighting"
-    fields["Version"] = 1
+    fields["version"] = 1
 
     template = tk.templates["maya_shot_work"]
     scene_path = template.apply_fields(fields)
     scene_path = scene_path.replace("\\", "/")
-    print(f"\t\t - SCENE LGT --> {scene_path}")
+    print(f"--------------------------- SCENE LGT --> {scene_path}")
+
+    if os.path.exists(scene_path):
+        print("-----------ERROR---------- LA ESCENA DE LGT YA EXISTE!!!")
+        ERROR.append(fields["Shot"])
+        return
 
     # Borramos la escena si ya existe
     if os.path.exists(scene_path):
@@ -301,16 +365,20 @@ def _create_lgt_scene(fields_anm):
     # Ensure folders are created
     scene_dir = os.path.dirname(scene_path)
     os.makedirs(scene_dir, exist_ok=True)
+    # mc.file(save=True, type='mayaAscii', f=True)
 
-    mc.file(rename=scene_path)
-    mc.file(save=True, type='mayaAscii', f=True)
-
-    print("----- ESCENA DE LGT VACIA CREADA!")
+    print("--------------------------- ESCENA DE LGT VACIA CREADA!")
 
     template_caches = tk.templates["maya_shot_anim_assets_abc_publish_root"]
     template_anim_cache = tk.templates["maya_shot_anim_assets_abc_publish"]
 
-    cache_root = template_caches.apply_fields(fields_anm)
+    paths = tk.paths_from_template(template_caches, fields_anm, skip_keys=["version"])
+    if not paths:
+        ERROR.append(fields["Shot"])
+        return
+    paths.sort(reverse=True)
+    cache_root = paths[0]
+    # cache_root = template_caches.apply_fields(fields_anm)
 
     for cache in os.listdir(cache_root):
 
@@ -324,8 +392,17 @@ def _create_lgt_scene(fields_anm):
 
     # Cargamos el setup de luces
     load_lgt()
+    print("--------------------------- LUCES CARGADAS")
 
+    # Cargamos la camara
+    load_camera(camera_path)
+    print("--------------------------- CAMARA CARGADA")
 
+    # Render settings
+    helpers._setRenderSettings()
+
+    mc.file(rename=scene_path)
+    mc.file(save=True, type='mayaAscii', f=True)
 
 
 def main():
@@ -334,18 +411,34 @@ def main():
     # Buscamos los shots a procesar #
     #
 
+    print("------------ BUSCANDO SHOTS")
+
     seq_name = "sq9200"
     shots = _search_shots_in_seq(seq_name)
 
     for shot in shots:
 
+        print("\n")
         print("-"*50)
         print(shot["code"])
         print("-"*20)
+        print("\n")
+
+        if shot["code"] in ["sq9200_sh0010", "sq9200_sh0020", "sq9200_sh0030", "sq9200_sh0040"]:
+            print("----- SKIPPING!")
+            continue
+
+        # Buscamos el status de la task de ANM
+        anim_task = sg.find_one("Task", [["entity", "is", shot], ["content", "is", "Animation"]], ["sg_status_list"])
+        if anim_task["sg_status_list"] != "apr":
+            print("----------ERROR--------------- ANIM TASK NO APROBADA AUN")
+            continue
 
         #
         # Exportamos la camara #
         #
+
+        print("------------ EXPORTAMOS CAMARA")
 
         # Buscamos la escena
         template_work = tk.templates["maya_shot_work"]
@@ -372,13 +465,25 @@ def main():
         # Exportamos
         _export_camera(camera_path)
 
+        if not os.path.exists(camera_path):
+            print("ERROR --> No se ha podido exportar la cámara...")
+            continue
+
         #
         # Creamos la escena de LGT #
         #
 
-        _create_lgt_scene(fields)
+        print("------------ CREAMOS LA ESCENA DE LGT")
 
-        
-    create_file()
-    load_things()
-    save()
+        _create_lgt_scene(fields, camera_path)
+
+        print("------------ DONEEEE ---------------------------")
+
+    print(f"ERRORES --> {ERROR}")
+
+
+if __name__ == "__main__":
+    main()
+
+
+# USE: "C:\Program Files\Autodesk\Maya2026\bin\mayapy.exe" "Z:\05Framework\users\aferraz\wknd_tools\utils\createLighttingScenes_adv.py"
