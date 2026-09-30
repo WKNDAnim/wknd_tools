@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.20] - 2026-09-30
+
+   - NUKE:
+      - Añadimos botón para liberar licencia de Neat Video
+   
+   - BorrarRendersBatch: Script que borra los renders de work y publish de nuke dejando solamente una versión.
+   - Add Groom Guides: Script que crea guias en los perros y hace que el groom las siga para intentar minimizar errores de pelo en render
+
+
+## [1.2.19] - 2026-09-16
+
+   - Añadimos ITMANAGER a la lista de usuarios que pueden publicar ANM por lotes
+   - Primera versión del creador de escenas de LGT para ADV
+
+
 ## [1.2.18] - 2026-08-03
 
    - UTILS:
